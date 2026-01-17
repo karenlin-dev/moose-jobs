@@ -52,7 +52,7 @@
             </p>
 
             <div class="mt-6 flex gap-3">
-                <a href="{{ url('/jobs') }}" class="px-5 py-3 rounded-xl bg-black text-white text-sm">
+                <a href="{{ url('/tasks') }}" class="px-5 py-3 rounded-xl bg-black text-white text-sm">
                     Browse Tasks
                 </a>
                 <a href="{{ url('/tasks/create') }}" class="px-5 py-3 rounded-xl border text-sm">

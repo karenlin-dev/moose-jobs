@@ -11,15 +11,25 @@ use Illuminate\Support\Facades\Auth;
 
 class TaskJobController extends Controller
 {
-    public function index() {
-        //dd('web route hit');
-        $tasks = TaskJob::with('user')
+    // public function index() {
+    //     //dd('web route hit');
+    //     $tasks = TaskJob::with('user')
+    //         ->where('status', JobStatus::OPEN)
+    //         ->latest()
+    //         ->get();
+
+    //     return view('tasks.index', compact('tasks'));
+    // }
+    public function index()
+    {
+        $tasks = TaskJob::with(['user', 'category'])
             ->where('status', JobStatus::OPEN)
             ->latest()
-            ->get();
+            ->paginate(12);
 
         return view('tasks.index', compact('tasks'));
     }
+
 
     public function create()
     {

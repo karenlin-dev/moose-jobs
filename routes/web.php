@@ -107,11 +107,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('dashboard');
 });
 
-/**
- * Public (guest can browse)
- */
-Route::get('/tasks', [TaskJobController::class, 'index'])->name('tasks.index');
-Route::get('/tasks/{task}', [TaskJobController::class, 'show'])->name('tasks.show'); // 建议加上
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/tasks/create', [TaskJobController::class, 'create'])
@@ -123,6 +118,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     //     ->name('tasks.index');
 });
 
+/**
+ * Public (guest can browse)
+ */
+Route::get('/tasks', [TaskJobController::class, 'index'])->name('tasks.index');
+Route::get('/tasks/{task}', [TaskJobController::class, 'show'])->name('tasks.show'); // 建议加上
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/tasks/{task}/bid', [BidController::class, 'create'])
