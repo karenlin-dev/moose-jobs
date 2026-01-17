@@ -152,15 +152,22 @@ class TaskJobController extends Controller
         ]);
     }
 
+    // public function show($id)
+    // {
+    //     $job = TaskJob::find($id);
+
+    //     if (!$job) {
+    //         return response()->json(['message' => 'Job not found'], 404);
+    //     }
+
+    //     return response()->json($job);
+    // }
+
     public function show($id)
     {
-        $job = TaskJob::find($id);
+        $task = TaskJob::findOrFail($id);
 
-        if (!$job) {
-            return response()->json(['message' => 'Job not found'], 404);
-        }
-
-        return response()->json($job);
+        return view('tasks.show', compact('task'));
     }
 
 //     public function show(TaskJob $job)
