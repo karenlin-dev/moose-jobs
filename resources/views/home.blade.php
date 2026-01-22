@@ -93,7 +93,10 @@
                         <div class="h-12 w-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
                             @php
                                 // 你目前头像公开路径如果是 /uploads/avatars/xxx.png（你已经修好上传显示）
-                                $avatar = !empty($p->avatar) ? url('uploads/'.$p->avatar) : null;
+                                //$avatar = !empty($p->avatar) ? url('uploads/'.$p->avatar) : null;
+                                $avatar = !empty($p->avatar)
+                                    ? asset('storage/' . $p->avatar)
+                                    : asset('images/default-avatar.png');
                             @endphp
 
                             @if($avatar)
