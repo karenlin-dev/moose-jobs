@@ -79,6 +79,7 @@ Route::get('/workers', function () {
  * 只保留这一条 show（不要再写 /workers/{id} 闭包）
  */
 Route::get('/workers/{worker}', [WorkerController::class, 'show'])
+    ->whereNumber('worker')
     ->name('workers.show');
 
 /**
