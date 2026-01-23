@@ -42,5 +42,11 @@ class TaskJob extends Model
         return $this->hasOne(JobAssignment::class, 'job_id');
     }
 
+    public function photos()
+    {
+        return $this->hasMany(\App\Models\TaskPhoto::class, 'task_job_id')
+            ->orderBy('sort')->orderBy('id');
+    }
+
 }
 

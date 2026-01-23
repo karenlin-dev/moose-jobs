@@ -10,10 +10,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\WorkerController;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
-
-// Route::get('/workers/edit', function () {
-//     return 'workers edit works';
-// });
+use App\Http\Controllers\ProfilePhotoController;
 
 
 Route::get('/', function () {
@@ -73,7 +70,8 @@ Route::get('/workers', function () {
 //     return view('workers.show', compact('worker'));
 // })->name('workers.show');
 
-
+Route::delete('/workers/photos/{photo}', [ProfilePhotoController::class, 'destroy'])
+    ->name('workers.photos.destroy');
 /**
  * Public: Worker detail (雇主/游客都能看)
  * 只保留这一条 show（不要再写 /workers/{id} 闭包）

@@ -64,6 +64,18 @@
                       rows="4">{{ old('bio', $profile->bio ?? '') }}</textarea>
             <x-input-error :messages="$errors->get('bio')" />
         </div>
+        {{-- Gallery Photos --}}
+        <div class="mb-6">
+            <label class="block mb-1 font-medium">Photos (up to 10)</label>
+            <input type="file" name="photos[]"
+                class="border p-2 rounded w-full"
+                accept="image/*"
+                multiple>
+            <p class="text-xs text-gray-500 mt-1">JPG/PNG/WEBP, max 5MB each.</p>
+            <x-input-error :messages="$errors->get('photos')" />
+            <x-input-error :messages="$errors->get('photos.*')" />
+        </div>
+
 
         {{-- Rating & Total Reviews (只读) --}}
         <div class="mb-4 text-sm text-gray-600">

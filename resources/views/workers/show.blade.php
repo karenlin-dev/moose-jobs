@@ -19,6 +19,33 @@
             <p><strong>Rating:</strong> {{ number_format($worker->profile->rating ?? 0, 1) }} / 5</p>
             <p><strong>Total Reviews:</strong> {{ $worker->profile->total_reviews ?? 0 }}</p>
         </div>
+        @if($worker->profile->photos && $worker->profile->photos->count())
+            <div class="mb-6">
+                <div class="font-medium mb-2">Current Photos</div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    @foreach($worker->profile->photos as $photo)
+                        <div class="border rounded-lg overflow-hidden bg-white">
+                            <img
+                                src="{{ asset('storage/'.$photo->path) }}"
+                                class="w-full h-32 object-cover"
+                                alt="photo"
+                            />
+
+                            <div class="p-2 flex justify-end">
+                                <form method="POST" action="{{ route('workers.photos.destroy', $photo->id) }}"
+                                    onsubmit="return confirm('Delete this photo?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="text-sm text-red-600 hover:underline">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
     </div>
 </x-app-layout>
 

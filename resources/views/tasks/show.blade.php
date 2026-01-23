@@ -32,6 +32,19 @@
             <p class="text-gray-700 whitespace-pre-line">
                 {{ $task->description }}
             </p>
+            @if($task->photos->count())
+                <div class="mt-6">
+                    <h3 class="font-semibold mb-2">Photos</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        @foreach($task->photos as $photo)
+                            <img src="{{ asset('storage/'.$photo->path) }}"
+                                class="w-full h-40 object-cover rounded-lg border"
+                                alt="task photo">
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
         </div>
 
         {{-- ===================== --}}

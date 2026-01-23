@@ -60,9 +60,11 @@ class TaskJobController extends Controller
             'city' => 'required|string|max:100',
             'budget' => 'required|numeric|min:0',
             'category_id' => 'nullable|integer|exists:categories,id',
+            'photos' => ['nullable', 'array', 'max:10'],
+            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
-        TaskJob::create([
+        $task = TaskJob::create([
             'user_id' => Auth::id(),
             'title' => $request->title,
             'description' => $request->description,
@@ -70,36 +72,19 @@ class TaskJobController extends Controller
             'budget' => $request->budget, 
             'category_id' => $request->category_id,
             'status' => JobStatus::OPEN,
-
         ]);
+        // 保存多张图片
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $img) {
+                $path = $img->store('task_photos', 'public'); // 存到 storage/app/public/task_photos
+                $task->photos()->create([
+                    'path' => $path,
+                    'sort' => 0,
+                ]);
+            }
+        }
         return redirect()->route('dashboard')->with('success', 'Task created successfully.');
-        // $data = TaskJob::create([
-        //     'user_id' => Auth::id(), 
-        //     'title' => $request->title,
-        //     'description' => $request->description,
-        //     'city' => 'required|string|max:100',
-        //     'budget' => 'required|numeric|min:0',
-        //     'category_id' => 'nullable|integer|exists:categories,id',
-        //     //'user_id' => auth()->id(), // 自动填
-        //     //'status' => 'open',
-        // ]);
-        
-        // TaskJob::create([
-        //     ...$data,
-        //     //'user_id' => $request->user()->id,
-        //     'status'  => JobStatus::OPEN,
-        // ]);
-
-        // //return redirect()->route('jobs.index');
-        // return redirect()->route('dashboard')
-        //     ->with('success', 'Task created successfully.');
-        // 创建记录
-        //$job = \App\Models\TaskJob::create($job);
-
-        // return response()->json([
-        //     'message' => 'Job created successfully',
-        //     'data' => $job
-        // ], 201);
+  
     }
   
 
@@ -126,23 +111,6 @@ class TaskJobController extends Controller
             return response()->json(['message' => 'Task completed']);
         }
 
-    // public function update(Request $request, $id) {
-    //     $job = TaskJob::findOrFail($id);
-
-    //     $validated = $request->validate([
-    //         'title' => 'sometimes|string|max:255',
-    //         'description' => 'sometimes|string',
-    //         'price' => 'sometimes|numeric',
-    //         'category_id' => 'sometimes|exists:categories,id',
-    //     ]);
-
-    //     $job->update($validated);
-
-    //     return response()->json([
-    //         'message' => 'Job updated successfully',
-    //         'data' => $job
-    //     ]);
-    // }
     public function update(Request $request, $id)
     {
         $job = TaskJob::find($id);
@@ -162,31 +130,15 @@ class TaskJobController extends Controller
         ]);
     }
 
-    // public function show($id)
-    // {
-    //     $job = TaskJob::find($id);
-
-    //     if (!$job) {
-    //         return response()->json(['message' => 'Job not found'], 404);
-    //     }
-
-    //     return response()->json($job);
-    // }
 
     public function show($id)
     {
-        $task = TaskJob::findOrFail($id);
+        //$task = TaskJob::findOrFail($id);
+        // eager load
+        $task = TaskJob::with('photos')->findOrFail($id);
 
         return view('tasks.show', compact('task'));
     }
-
-//     public function show(TaskJob $job)
-// {
-//     $job->load(['bids.user']);
-
-//     return view('jobs.show', compact('job'));
-// }
-
 
 
     public function destroy($id) {
