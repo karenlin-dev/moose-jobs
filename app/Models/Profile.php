@@ -14,4 +14,9 @@ class Profile extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function photos()
+    {
+        return $this->hasMany(\App\Models\ProfilePhoto::class)->orderBy('sort')->orderBy('id');
+    }
+
 }

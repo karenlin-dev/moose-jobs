@@ -37,6 +37,8 @@ class WorkerController extends Controller
                 'avatar' => null,
             ]
         );
+        // 关键：加载多图关系（Profile::photos() 你需要已定义）
+        $profile->load('photos');
 
         return view('workers.edit', compact('profile', 'worker'));
     }
@@ -46,7 +48,8 @@ class WorkerController extends Controller
     public function update(Request $request)
     {
         $user = Auth::user();
-        // $profile = $worker->profile ?? new Profile(['user_id' => $worker->id]);
+        // // 如果 profile 不存在则创建
+        // $profile = $user->profile ?? new Profile(['user_id' => $user->id]);
 
         $data = $request->validate([
             'city' => 'required|string|max:255',
@@ -54,7 +57,20 @@ class WorkerController extends Controller
             'avatar' => 'nullable|image|max:2048', // 图片大小限制 2MB
             'phone' => 'nullable|string|max:255',
             'skills' => 'nullable|string|max:1000',
-        ]);
+            'photos' => ['nullable', 'array', 'max:10'],                 // 最多10张
+            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], // 每张<=5MB
+        ]); 
+
+         // 先拿到或创建 profile（确保有 ID）
+        $profile = \App\Models\Profile::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'city' => 'Moose Jaw',
+                'rating' => 0,
+                'total_reviews' => 0,
+                'avatar' => null,
+            ]
+        );
 
         // 处理头像上传
         if ($request->hasFile('avatar')) {
@@ -62,38 +78,22 @@ class WorkerController extends Controller
             $data['avatar'] = $avatarPath;
         }
 
-        // 如果 profile 不存在则创建
-        if (!$user->profile) {
-            $user->profile()->create($data);
-        } else {
-            $user->profile->update($data);
+         // 更新 profile 基础字段（不含 photos）
+        unset($data['photos']); // 避免 update 时把 photos 当字段
+        $profile->update($data);
+
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $img) {
+                $path = $img->store('profile_photos', 'public'); // 存到 storage/app/public/profile_photos
+                $profile->photos()->create([
+                    'path' => $path,
+                    'sort' => 0,
+                ]);
+            }
         }
+         //$profile->update($data);
 
         return redirect()->route('workers.edit')->with('success', 'Profile updated successfully!');
-
-        // $data = $request->validate([
-        //     'name' => 'required|string|max:255',
-        //     'city' => 'nullable|string|max:255',
-        //     'bio' => 'nullable|string|max:2000',
-        //     'skills' => 'nullable|string|max:255',
-        //     'phone' => 'nullable|string|max:50',
-        //     'avatar' => 'nullable|image|max:2048', // 上传图片限制 2MB
-        // ]);
-
-        // // 上传头像
-        // if ($request->hasFile('avatar')) {
-        //     if ($profile->avatar) Storage::disk('public')->delete($profile->avatar);
-        //     $profile->avatar = $request->file('avatar')->store('avatars', 'public');
-        // }
-
-        // $profile->bio = $data['bio'] ?? $profile->bio;
-        // $profile->skills = $data['skills'] ?? $profile->skills;
-        // $profile->phone = $data['phone'] ?? $profile->phone;
-        // $profile->save();
-
-        // // 更新用户基础信息
-        // $worker->update(['name' => $data['name']]);
-
-        // return redirect()->route('workers.edit')->with('success', 'Profile updated successfully.');
+      
     }
 }
