@@ -55,9 +55,11 @@
                 <a href="{{ url('/tasks') }}" class="px-5 py-3 rounded-xl bg-black text-white text-sm">
                     Browse Tasks
                 </a>
+                @if(auth()->user()->isEmployer())
                 <a href="{{ url('/tasks/create') }}" class="px-5 py-3 rounded-xl border text-sm">
                     Post a Task
                 </a>
+                @endif
             </div>
 
             <div class="mt-6 text-sm text-gray-500">
