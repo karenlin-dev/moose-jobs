@@ -116,8 +116,9 @@
                         <div class="flex items-center gap-4">
                             <div class="h-12 w-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
                                 @php
-                                    $avatar = !empty($p->avatar)
-                                        ? asset('storage/' . $p->avatar)
+                                    $avatarPath = $p->profile?->avatar; // 注意：profile 可能为空
+                                    $avatar = $avatarPath
+                                        ? asset('storage/' . $avatarPath)
                                         : asset('images/default-avatar.png');
                                 @endphp
 
