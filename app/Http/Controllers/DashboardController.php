@@ -2,41 +2,53 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\TaskJob;
+use App\Models\Category;
 
 class DashboardController extends Controller
 {
-    public function index()
+       public function index()
     {
         $user = Auth::user();
 
+        // 给 dashboard 的过滤器用（worker / employer 都可以用）
+        $categories = Category::orderBy('name')->get();
+
         if ($user->role === 'employer') {
-            // 雇主发布的任务（含投标人）
+            // 雇主发布的任务（含投标人 + category）
             $tasks = $user->postedTasks()
-                ->with('bids.worker')
+                ->with(['category', 'bids.worker'])
                 ->latest()
                 ->get();
-
-            return view('dashboard', compact('user', 'tasks'));
+            return view('dashboard', compact('user', 'tasks', 'categories'));
         }
 
-        // worker
-        $bids = $user->bids()->with('task')->latest()->get();
+        // -------------------------
+        // worker dashboard
+        // -------------------------
 
+        // worker 的 bids（带 task + task.category）
+        $bids = $user->bids()
+            ->with(['task.category'])
+            ->latest()
+            ->get();
+
+        // assignments（带 task + task.category）
         $assignments = $user->assignments()
-            ->with('task')
+            ->with(['task.category'])
             ->latest()
             ->get();
 
-        $tasks = TaskJob::where('status', 'open')
+        // 可投标任务（open + 不是自己发布的，带 category）
+        $tasks = TaskJob::query()
+            ->where('status', 'open')
             ->where('user_id', '!=', $user->id)
+            ->with(['category'])
             ->latest()
             ->get();
-
-        return view('dashboard', compact('user', 'bids', 'assignments', 'tasks'));
-
+        
+        return view('dashboard', compact('user', 'bids', 'assignments', 'tasks', 'categories'));
     }
 }
     // public function dashboard()

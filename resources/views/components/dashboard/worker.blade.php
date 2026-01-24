@@ -35,7 +35,20 @@
         </div>
 
         {{-- 右侧：任务列表 --}}
-        <div class="md:col-span-2 space-y-8">
+        <div class="md:col-span-2 space-y-8"
+            x-data="{
+                selectedCat: 'all',
+                // 统一取 category id（支持 category_id 或 category->id）
+                catIdOf(task) {
+                    return task.category_id ?? (task.category ? task.category.id : null);
+                },
+                match(task) {
+                    if (this.selectedCat === 'all') return true;
+                    const id = this.catIdOf(task);
+                    return String(id) === String(this.selectedCat);
+                }
+            }"
+        >
 
             {{-- Flash message --}}
             @if(session('success'))
@@ -44,37 +57,78 @@
                 </div>
             @endif
 
+            {{-- Filter Bar --}}
+            <div class="bg-white border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                <div class="font-semibold text-gray-800">Task Filters</div>
+
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-gray-600">Category:</label>
+                    <select class="border rounded-lg px-3 py-2 text-sm"
+                            x-model="selectedCat">
+                        <option value="all">All</option>
+
+                        {{-- 这里假设你 controller 里有 $categories --}}
+                        @foreach($categories ?? [] as $cat)
+                            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
             {{-- 1. 浏览可投标任务 --}}
-            <div>
-                <h3 class="text-lg font-semibold mb-2">Available Tasks</h3>
+            <div class="bg-white border rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-semibold">
+                        Available Tasks
+                        <span class="text-sm text-gray-500 font-normal">({{ $tasks->count() }})</span>
+                    </h3>
+                </div>
 
                 @if($tasks->isEmpty())
                     <p class="text-gray-500">No tasks available to bid.</p>
                 @else
                     <ul class="divide-y divide-gray-200">
                         @foreach($tasks as $task)
-                            <li class="py-2 flex justify-between items-center">
-                                <div>
-                                    <a href="{{ route('tasks.index', $task) }}" class="text-indigo-600 hover:underline font-medium">
+                            <li class="py-3 flex justify-between items-center"
+                                x-show="match(@js($task))"
+                                x-transition
+                            >
+                                <div class="min-w-0">
+                                    {{-- 你原来这里 route('tasks.index', $task) 是不对的（index 不接收 task）
+                                        一般应该是 tasks.show。
+                                        如果你没有 show route，就先保留原写法。
+                                    --}}
+                                    <a href="{{ route('tasks.show', $task) }}"
+                                    class="text-indigo-600 hover:underline font-medium truncate block">
                                         {{ $task->title }}
                                     </a>
-                                    <span class="text-gray-400 text-sm ml-2">
-                                        Budget: ${{ $task->budget }} · City: {{ $task->city }}
-                                    </span>
+
+                                    <div class="text-gray-500 text-sm mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                                        <span>Budget: ${{ $task->budget }}</span>
+                                        <span>City: {{ $task->city }}</span>
+
+                                        {{-- 分类显示（支持 category / category_id） --}}
+                                        <span class="text-gray-400">
+                                            Category:
+                                            {{ $task->category->name ?? ($categories->firstWhere('id', $task->category_id)->name ?? '-') }}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 @php
                                     $alreadyBid = $bids->pluck('job_id')->contains($task->id);
                                 @endphp
 
-                                @if(!$alreadyBid)
-                                    <a href="{{ route('bids.create', $task) }}"
-                                    class="text-white bg-indigo-600 px-4 py-1 rounded hover:bg-indigo-700">
-                                        Submit Bid
-                                    </a>
-                                @else
-                                    <span class="text-gray-500 px-4 py-1 rounded border">Already Bid</span>
-                                @endif
+                                <div class="shrink-0 ml-4">
+                                    @if(!$alreadyBid)
+                                        <a href="{{ route('bids.create', $task) }}"
+                                        class="text-white bg-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm">
+                                            Submit Bid
+                                        </a>
+                                    @else
+                                        <span class="text-gray-500 px-4 py-2 rounded-lg border text-sm">Already Bid</span>
+                                    @endif
+                                </div>
                             </li>
                         @endforeach
                     </ul>
@@ -82,62 +136,93 @@
             </div>
 
             {{-- 2. 已投标任务 --}}
-            <div>
-                <h3 class="text-lg font-semibold mb-2">My Bids</h3>
+            <div class="bg-white border rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-semibold">
+                        My Bids
+                        <span class="text-sm text-gray-500 font-normal">({{ $bids->count() }})</span>
+                    </h3>
+                </div>
 
                 @if($bids->isEmpty())
                     <p class="text-gray-500">You have not placed any bids yet.</p>
                 @else
                     <ul class="divide-y divide-gray-200">
                         @foreach($bids as $bid)
-                        <li class="py-2 flex justify-between items-center">
-                            <div>
-                            @if($bid->task)
-                                <a href="{{ route('bids.show', $bid) }}" class="text-indigo-600 hover:underline">
-                                    {{ $bid->task->title }}
-                                </a>
-                                <span class="text-gray-400 text-sm ml-2">
-                                    {{ $bid->status }} - {{ $bid->created_at->diffForHumans() }}
-                                </span>
-                            @else
-                                <span class="text-gray-400 italic">Task has been deleted</span>
-                            @endif
-                        </div>
-                    </li>
-                @endforeach
+                            @php $t = $bid->task; @endphp
 
+                            <li class="py-3 flex justify-between items-center"
+                                @if($t) x-show="match(@js($t))" @endif
+                                x-transition
+                            >
+                                <div class="min-w-0">
+                                    @if($t)
+                                        <a href="{{ route('bids.show', $bid) }}"
+                                        class="text-indigo-600 hover:underline font-medium truncate block">
+                                            {{ $t->title }}
+                                        </a>
+
+                                        <div class="text-gray-500 text-sm mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                                            <span>Status: {{ $bid->status }}</span>
+                                            <span>{{ $bid->created_at->diffForHumans() }}</span>
+                                            <span class="text-gray-400">
+                                                Category: {{ $t->category->name ?? '-' }}
+                                            </span>
+                                        </div>
+                                    @else
+                                        <span class="text-gray-400 italic">Task has been deleted</span>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
                     </ul>
                 @endif
             </div>
 
             {{-- 3. 已成交任务 --}}
-            <div>
-                <h3 class="text-lg font-semibold mb-2">My Assignments</h3>
+            <div class="bg-white border rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-semibold">
+                        My Assignments
+                        <span class="text-sm text-gray-500 font-normal">({{ $assignments->count() }})</span>
+                    </h3>
+                </div>
 
                 @if($assignments->isEmpty())
                     <p class="text-gray-500">You have no assignments yet.</p>
                 @else
                     <ul class="divide-y divide-gray-200">
                         @foreach($assignments as $assignment)
-                            <li class="py-2 flex justify-between items-center">
-                                <div>
-                                    <a href="{{ route('assignments.show', $assignment) }}" class="text-indigo-600 hover:underline">
-                                        {{ $assignment->task->title }}
+                            @php $t = $assignment->task; @endphp
+
+                            <li class="py-3 flex justify-between items-center"
+                                @if($t) x-show="match(@js($t))" @endif
+                                x-transition
+                            >
+                                <div class="min-w-0">
+                                    <a href="{{ route('assignments.show', $assignment) }}"
+                                    class="text-indigo-600 hover:underline font-medium truncate block">
+                                        {{ $t->title }}
                                     </a>
-                                    <span class="text-gray-400 text-sm ml-2">
-                                        Started: {{ $assignment->started_at->format('Y-m-d') }}
-                                    </span>
+
+                                    <div class="text-gray-500 text-sm mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                                        <span>Started: {{ $assignment->started_at->format('Y-m-d') }}</span>
+                                        <span class="text-gray-400">Category: {{ $t->category->name ?? '-' }}</span>
+                                        <span class="text-gray-400">Status: {{ $t->status }}</span>
+                                    </div>
                                 </div>
 
-                                @if($assignment->task->status !== 'completed')
-                                    <form method="POST" action="{{ route('assignments.complete', $assignment) }}">
-                                        @csrf
-                                        @method('PATCH')
-                                        <x-primary-button>Mark Completed</x-primary-button>
-                                    </form>
-                                @else
-                                    <span class="text-green-600 font-semibold">Completed</span>
-                                @endif
+                                <div class="shrink-0 ml-4">
+                                    @if($t->status !== 'completed')
+                                        <form method="POST" action="{{ route('assignments.complete', $assignment) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <x-primary-button>Mark Completed</x-primary-button>
+                                        </form>
+                                    @else
+                                        <span class="text-green-600 font-semibold">Completed</span>
+                                    @endif
+                                </div>
                             </li>
                         @endforeach
                     </ul>
@@ -145,5 +230,5 @@
             </div>
 
         </div>
-    </div>
+
 </x-app-layout>
