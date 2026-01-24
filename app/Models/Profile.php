@@ -18,5 +18,10 @@ class Profile extends Model
     {
         return $this->hasMany(\App\Models\ProfilePhoto::class)->orderBy('sort')->orderBy('id');
     }
+    public function categories()
+    {
+        return $this->belongsToMany(\App\Models\Category::class, 'category_profile')
+            ->withTimestamps();
+    }
 
 }

@@ -70,16 +70,6 @@
             </div>
         </div>
 
-        <div class="bg-white border rounded-2xl p-6">
-            <div class="text-sm font-semibold">Popular Categories</div>
-            <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
-                @foreach (['Moving','Decorating','Maintenance','Web Design','Baking'] as $c)
-                    <div class="rounded-xl border px-4 py-3 bg-gray-50">
-                        {{ $c }}
-                    </div>
-                @endforeach
-            </div>
-        </div>
     </section>
 
     <section class="mt-12">
@@ -90,57 +80,85 @@
             </div>
             <a href="{{ url('/workers') }}" class="text-sm hover:underline">View all</a>
         </div>
+        <div x-data="{ selected: 'all' }">
+        {{-- 分类区 --}}
+            <div class="bg-white border rounded-2xl p-6">
+                <div class="text-sm font-semibold">Popular Categories</div>
 
-        <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            @forelse($workers as $p)
-                <div class="bg-white border rounded-2xl p-5">
-                    <div class="flex items-center gap-4">
-                        <div class="h-12 w-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                            @php
-                                // 你目前头像公开路径如果是 /uploads/avatars/xxx.png（你已经修好上传显示）
-                                //$avatar = !empty($p->avatar) ? url('uploads/'.$p->avatar) : null;
-                                $avatar = !empty($p->avatar)
-                                    ? asset('storage/' . $p->avatar)
-                                    : asset('images/default-avatar.png');
-                            @endphp
+                <div class="mt-4 flex flex-wrap gap-2 text-sm">
+                    <button type="button"
+                        @click="selected='all'"
+                        class="px-4 py-2 rounded-xl border"
+                        :class="selected==='all' ? 'bg-black text-white border-black' : 'bg-gray-50 hover:bg-gray-100'">
+                        All
+                    </button>
 
-                            @if($avatar)
-                                <img src="{{ $avatar }}" class="h-full w-full object-cover" alt="avatar"
-                                     onerror="this.style.display='none'">
-                            @else
-                                <span class="text-xs text-gray-400">Avatar</span>
-                            @endif
+                    @foreach($categories as $cat)
+                        <button type="button"
+                            @click="selected='{{ $cat->id }}'"
+                            class="px-4 py-2 rounded-xl border"
+                            :class="selected==='{{ $cat->id }}' ? 'bg-black text-white border-black' : 'bg-gray-50 hover:bg-gray-100'">
+                            {{ $cat->name }}
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+        
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                @forelse($workers as $p)
+                    @php
+                        $profile = $p->profile;
+                        $catIds = $profile?->categories?->pluck('id')->values()->all() ?? [];
+                    @endphp
+                    <div class="bg-white border rounded-2xl p-5" 
+                        x-show="selected==='all' || @js($catIds).includes(parseInt(selected))"
+                        x-transition>
+                        <div class="flex items-center gap-4">
+                            <div class="h-12 w-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                                @php
+                                    $avatar = !empty($p->avatar)
+                                        ? asset('storage/' . $p->avatar)
+                                        : asset('images/default-avatar.png');
+                                @endphp
+
+                                @if($avatar)
+                                    <img src="{{ $avatar }}" class="h-full w-full object-cover" alt="avatar"
+                                        onerror="this.style.display='none'">
+                                @else
+                                    <span class="text-xs text-gray-400">Avatar</span>
+                                @endif
+                            </div>
+
+                            <div class="min-w-0">
+                                <div class="font-semibold truncate">
+                                    {{ $p->display_name ?? $p->name ?? 'Service Provider' }}
+                                </div>
+                                <div class="text-sm text-gray-600 truncate">
+                                    {{ $p->city ?? 'Moose Jaw' }}
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="min-w-0">
-                            <div class="font-semibold truncate">
-                                {{ $p->display_name ?? $p->name ?? 'Service Provider' }}
-                            </div>
-                            <div class="text-sm text-gray-600 truncate">
-                                {{ $p->city ?? 'Moose Jaw' }}
-                            </div>
+                        <div class="mt-4 text-sm text-gray-700">
+                            {{ $p->bio ?: 'Experienced local helper. Fast response and fair pricing.' }}
+                        </div>
+
+                        <div class="mt-4 flex items-center justify-between">
+                            <span class="text-xs text-gray-500">
+                                SERVICE PROVIDER
+                            </span>
+
+                            <a href="{{ url('/workers/'.$p->id) }}" class="text-sm font-medium hover:underline">
+                                View
+                            </a>
                         </div>
                     </div>
-
-                    <div class="mt-4 text-sm text-gray-700">
-                        {{ $p->bio ?: 'Experienced local helper. Fast response and fair pricing.' }}
+                @empty
+                    <div class="text-gray-600 bg-white border rounded-2xl p-6">
+                        No workers yet. Register as a service workers to appear here.
                     </div>
-
-                    <div class="mt-4 flex items-center justify-between">
-                        <span class="text-xs text-gray-500">
-                            SERVICE PROVIDER
-                        </span>
-
-                        <a href="{{ url('/workers/'.$p->id) }}" class="text-sm font-medium hover:underline">
-                            View
-                        </a>
-                    </div>
-                </div>
-            @empty
-                <div class="text-gray-600 bg-white border rounded-2xl p-6">
-                    No workers yet. Register as a service workers to appear here.
-                </div>
-            @endforelse
+                @endforelse
+            </div>
         </div>
     </section>
 </main>
@@ -150,5 +168,7 @@
         © {{ date('Y') }} Moose Jobs — Built with Laravel
     </div>
 </footer>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
 </body>
 </html>
