@@ -22,6 +22,7 @@
                 :tasks="$tasks"
                 :bids="$bids"
                 :assignments="$assignments"
+                :categories="$categories"
             />
         @endif
     </div>
