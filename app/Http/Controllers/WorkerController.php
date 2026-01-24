@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Profile;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -40,7 +41,10 @@ class WorkerController extends Controller
         // 关键：加载多图关系（Profile::photos() 你需要已定义）
         $profile->load('photos');
 
-        return view('workers.edit', compact('profile', 'worker'));
+        $profile->load('categories');
+        $categories = Category::orderBy('name')->get();
+
+        return view('workers.edit', compact('profile', 'worker', 'categories'));
     }
 
 
@@ -59,6 +63,8 @@ class WorkerController extends Controller
             'skills' => 'nullable|string|max:1000',
             'photos' => ['nullable', 'array', 'max:10'],                 // 最多10张
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], // 每张<=5MB
+            'category_ids' => 'nullable|array|max:10',
+            'category_ids.*' => 'integer|exists:categories,id',
         ]); 
 
          // 先拿到或创建 profile（确保有 ID）
@@ -82,6 +88,9 @@ class WorkerController extends Controller
         unset($data['photos']); // 避免 update 时把 photos 当字段
         $profile->update($data);
 
+        // 同步多对多分类（没选就清空）
+        $profile->categories()->sync($request->input('category_ids', []));
+
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $img) {
                 $path = $img->store('profile_photos', 'public'); // 存到 storage/app/public/profile_photos
@@ -91,7 +100,6 @@ class WorkerController extends Controller
                 ]);
             }
         }
-         //$profile->update($data);
 
         return redirect()->route('workers.edit')->with('success', 'Profile updated successfully!');
       

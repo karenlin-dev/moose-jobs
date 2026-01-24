@@ -56,6 +56,27 @@
             <x-input-error :messages="$errors->get('skills')" />
         </div>
 
+        {{-- Categories (multi-select) --}}
+        <div class="mb-4">
+            <label class="block mb-1 font-medium">Categories</label>
+
+            <div class="grid grid-cols-2 gap-2">
+                @foreach($categories as $cat)
+                    <label class="flex items-center gap-2 text-sm">
+                        <input type="checkbox"
+                            name="category_ids[]"
+                            value="{{ $cat->id }}"
+                            @checked(in_array($cat->id, old('category_ids', $profile->categories->pluck('id')->all())))
+                        >
+                        <span>{{ $cat->name }}</span>
+                    </label>
+                @endforeach
+            </div>
+
+            <x-input-error :messages="$errors->get('category_ids')" />
+        </div>
+
+
         {{-- Bio --}}
         <div class="mb-4">
             <label class="block mb-1 font-medium">Bio</label>

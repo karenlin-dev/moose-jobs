@@ -12,6 +12,13 @@ class Category extends Model
      protected $fillable = ['name', 'description'];
 
     public function jobs() {
-        return $this->hasMany(Job::class);
+        return $this->hasMany(TaskJob::class);
     }
+
+    public function profiles()
+    {
+        return $this->belongsToMany(\App\Models\Profile::class, 'category_profile')
+            ->withTimestamps();
+    }
+
 }

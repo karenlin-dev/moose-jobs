@@ -10,29 +10,41 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\WorkerController;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
+use APP\Models\Category;
 use App\Http\Controllers\ProfilePhotoController;
 
 
+// Route::get('/', function () {
+
+//     $workers = DB::table('users')
+//         ->leftJoin('profiles', 'profiles.user_id', '=', 'users.id')
+//         ->select(
+//             'users.id',
+//             'users.name',
+//             'users.role',
+//             'profiles.avatar',
+//             'profiles.city',
+//             'profiles.bio'
+//         )
+//         ->where('users.role', 'worker')
+//         ->orderByDesc('users.id')
+//         ->limit(12)
+//         ->get();
+
+//     return view('home', compact('workers'));
+// })->name('home');
 Route::get('/', function () {
 
-    $workers = DB::table('users')
-        ->leftJoin('profiles', 'profiles.user_id', '=', 'users.id')
-        ->select(
-            'users.id',
-            'users.name',
-            'users.role',
-            'profiles.avatar',
-            'profiles.city',
-            'profiles.bio'
-        )
-        ->where('users.role', 'worker')
-        ->orderByDesc('users.id')
-        ->limit(12)
+    $workers = User::with(['profile.categories'])
+        ->where('role', 'worker')
+        ->latest()
+        ->take(12)
         ->get();
 
-    return view('home', compact('workers'));
-})->name('home');
+    $categories = Category::orderBy('name')->get();
 
+    return view('home', compact('workers', 'categories'));
+})->name('home');
 
 /**
  * Public: Worker list
