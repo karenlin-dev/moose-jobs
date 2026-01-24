@@ -11,9 +11,42 @@
     </x-slot>
 
     <div class="max-w-5xl mx-auto py-8 space-y-6">
+       @php
+            $currentCatName = null;
+            if (!empty($categoryId) && isset($categories)) {
+                $currentCatName = optional($categories->firstWhere('id', (int)$categoryId))->name;
+            }
+        @endphp
+
         <h2 class="text-xl font-semibold text-gray-800">
-            {{  auth()->user()->isEmployer() ? 'My Tasks' : 'Worker Dashboard' }}
+            {{ auth()->user()->isEmployer() ? 'My Tasks' : 'Worker Dashboard' }}
+            @if($currentCatName)
+                <span class="text-sm text-gray-500">— {{ $currentCatName }}</span>
+            @endif
         </h2>
+
+        @php
+            // 防止未定义
+            $categories = $categories ?? collect();
+            $categoryId = $categoryId ?? null;
+        @endphp
+
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('dashboard') }}"
+            class="px-4 py-2 rounded border text-sm
+                    {{ empty($categoryId) ? 'bg-black text-white border-black' : 'bg-gray-100 hover:bg-gray-200' }}">
+                All
+            </a>
+
+            @foreach($categories as $cat)
+                <a href="{{ route('dashboard', ['category' => $cat->id]) }}"
+                class="px-4 py-2 rounded border text-sm
+                        {{ (string)$categoryId === (string)$cat->id ? 'bg-black text-white border-black' : 'bg-gray-100 hover:bg-gray-200' }}">
+                    {{ $cat->name }}
+                </a>
+            @endforeach
+        </div>
+
 
         @forelse($tasks as $task)
             <div class="bg-white p-6 rounded shadow space-y-2">

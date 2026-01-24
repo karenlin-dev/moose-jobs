@@ -13,7 +13,7 @@
     <div class="max-w-6xl mx-auto py-8 space-y-8">
         {{-- Employer Dashboard --}}
         @if(auth()->user()->isEmployer())
-            <x-dashboard.employer :tasks="$tasks" />
+            <x-dashboard.employer :tasks="$tasks" :categories="$categories"/>
 
         {{-- Worker Dashboard --}}
         @else
