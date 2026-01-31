@@ -17,7 +17,7 @@
         <div class="flex items-center gap-3">
             {{-- 你的 logo 如果放在 images/logo.png --}}
             <div class="h-10 w-10 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center">
-                <img src="{{ asset('images/logo.png') }}" alt="Moose Jobs" class="h-full w-full object-cover">
+                <img src="{{ asset('images/logo.PNG') }}" alt="Moose Jobs" class="h-full w-full object-cover">
             </div>
             <div>
                 <div class="text-lg font-bold leading-tight">Moose Jobs</div>
