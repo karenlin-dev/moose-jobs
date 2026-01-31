@@ -17,8 +17,7 @@
         <div class="flex items-center gap-3">
             {{-- 你的 logo 如果放在 images/logo.png --}}
             <div class="h-10 w-10 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center">
-                <img src="{{ asset('images/logo.png') }}" alt="Moose Jobs" class="h-full w-full object-cover"
-                     onerror="this.style.display='none'">
+                <img src="{{ asset('images/logo.png') }}" alt="Moose Jobs" class="h-full w-full object-cover">
             </div>
             <div>
                 <div class="text-lg font-bold leading-tight">Moose Jobs</div>
@@ -135,20 +134,32 @@
                                     {{ $p->display_name ?? $p->name ?? 'Service Provider' }}
                                 </div>
                                 <div class="text-sm text-gray-600 truncate">
-                                    {{ $p->city ?? 'Moose Jaw' }}
+                                    {{ $p->profile?->city ?? 'Moose Jaw' }}
                                 </div>
+
                             </div>
                         </div>
-
                         <div class="mt-4 text-sm text-gray-700">
-                            {{ $p->bio ?: 'Experienced local helper. Fast response and fair pricing.' }}
+                           {{ $p->profile?->phone ?? 'Service Provider' }}
                         </div>
+                        <div class="mt-4 text-sm text-gray-700">
+                            {{ $p->profile?->bio ?: 'Experienced local helper. Fast response and fair pricing.' }}
+                        </div>
+                        @php
+                            $skillsRaw = $p->profile?->skills ?? '';
+                            $skills = collect(array_filter(array_map('trim', explode(',', $skillsRaw))))->take(6);
+                        @endphp
 
+                        @if($skills->isNotEmpty())
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                @foreach($skills as $s)
+                                    <span class="text-xs px-2 py-1 rounded-full border bg-gray-50 text-gray-700">
+                                        {{ $s }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
                         <div class="mt-4 flex items-center justify-between">
-                            <span class="text-xs text-gray-500">
-                                SERVICE PROVIDER
-                            </span>
-
                             <a href="{{ url('/workers/'.$p->id) }}" class="text-sm font-medium hover:underline">
                                 View
                             </a>
