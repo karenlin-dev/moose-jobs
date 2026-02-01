@@ -68,22 +68,14 @@ Route::get('/workers', function () {
 })->name('workers.index');
 
 
-// /**
-//  * Worker detail page
-//  */
-// Route::get('/workers/{id}', function ($id) {
 
-//     $worker = User::with('profile')
-//         ->where('role', 'worker')
-//         ->findOrFail($id);
+// Route::delete('/workers/photos/{photo}', [ProfilePhotoController::class, 'destroy'])
+//     ->name('workers.photos.destroy');
+Route::middleware('auth')->group(function() {
+    Route::delete('/worker/photos/{photo}', [WorkerController::class, 'destroyPhoto'])->name('workers.photos.destroy');
+    Route::post('/worker/photos/reorder', [WorkerController::class, 'reorderPhotos'])->name('workers.photos.reorder');
+});
 
-//     abort_if(!$worker, 404);
-
-//     return view('workers.show', compact('worker'));
-// })->name('workers.show');
-
-Route::delete('/workers/photos/{photo}', [ProfilePhotoController::class, 'destroy'])
-    ->name('workers.photos.destroy');
 /**
  * Public: Worker detail (雇主/游客都能看)
  * 只保留这一条 show（不要再写 /workers/{id} 闭包）
