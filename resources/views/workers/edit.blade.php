@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
         img.src = src;
         preview.classList.remove('hidden');
     };
-
+    
     // 拖拽排序
     new Sortable(document.getElementById('photo-grid'), {
         animation: 150,
@@ -248,6 +248,7 @@ const photosInput = document.getElementById('photosInput');
             }
         }
     });
+    fetch('{{ route("workers.photos.destroy", "") }}/' + id, { method: 'DELETE', ... });
 </script>
 
 {{-- 预览弹窗 --}}
