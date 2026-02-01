@@ -207,7 +207,10 @@ document.addEventListener('DOMContentLoaded', function() {
     window.deletePhoto = function(id) {
         if(!confirm('Are you sure to delete this photo?')) return;
 
-        fetch(`/worker/photos/${id}`, {
+        // 使用 Laravel route helper 动态生成 URL
+        const url = `{{ route('workers.photos.destroy', ['photo' => '__id__']) }}`.replace('__id__', id);
+
+        fetch(url, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -221,6 +224,10 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 alert('Delete failed.');
             }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Delete failed.');
         });
     }
 });
@@ -248,7 +255,7 @@ const photosInput = document.getElementById('photosInput');
             }
         }
     });
-    fetch('{{ route("workers.photos.destroy", "") }}/' + id, { method: 'DELETE', ... });
+    
 </script>
 
 {{-- 预览弹窗 --}}
