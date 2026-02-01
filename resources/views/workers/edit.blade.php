@@ -121,7 +121,7 @@
                 <x-input-error :messages="$photoSubErrors" />
             @endif
         </div>
-        {{-- Photo Grid (显示已上传的图片，可删除可拖拽排序) --}}
+       {{-- Photo Grid --}}
         <div id="photo-grid" class="grid grid-cols-3 gap-3 mb-6">
             @foreach($photos as $photo)
             <div class="relative group cursor-move" data-id="{{ $photo->id }}">
@@ -141,41 +141,51 @@
 </div>
 
 {{-- JS --}}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 动态更新 skills
-        const skillInput = document.getElementById('skills');
-        const checkboxes = document.querySelectorAll('.category-checkbox');
-
-        function updateSkills() {
-            let selected = [];
-            checkboxes.forEach(cb => {
-                if(cb.checked) selected.push(cb.nextElementSibling.textContent);
-            });
-            skillInput.value = selected.join(', ');
-        }
-
-        checkboxes.forEach(cb => {
-            cb.addEventListener('change', updateSkills);
-        });
-        updateSkills(); // 页面加载时同步一次
-
-        // 可扩展：拖拽排序
-        // 使用 SortableJS 或类似库
-    });
-</script>
-    {{-- 预览弹窗 --}}
-    <div id="photo-preview" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50" onclick="this.classList.add('hidden')">
-        <img id="preview-img" class="max-w-full max-h-full rounded">
-    </div>
-    {{-- SortableJS --}}
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-
-    <script>
-    function openPreview(src) {
-        document.getElementById('preview-img').src = src;
-        document.getElementById('photo-preview').classList.remove('hidden');
+document.addEventListener('DOMContentLoaded', function() {
+    // 动态生成 skills
+    const skillInput = document.getElementById('skills');
+    const checkboxes = document.querySelectorAll('.category-checkbox');
+    function updateSkills() {
+        let selected = [];
+        checkboxes.forEach(cb => { if(cb.checked) selected.push(cb.nextElementSibling.textContent); });
+        skillInput.value = selected.join(', ');
     }
+    checkboxes.forEach(cb => cb.addEventListener('change', updateSkills));
+    updateSkills();
+
+    // 限制上传 10 张 + 文件类型/大小
+    const photosInput = document.getElementById('photosInput');
+    photosInput.addEventListener('change', function() {
+        const files = this.files;
+        const existingCount = document.querySelectorAll('#photo-grid [data-id]').length;
+        if (files.length + existingCount > 10) {
+            alert('You can upload up to 10 photos only.');
+            this.value = '';
+            return;
+        }
+        for (let f of files) {
+            if (!['image/jpeg','image/jpg','image/png','image/webp'].includes(f.type)) {
+                alert('Only JPG, PNG, WEBP allowed.');
+                this.value = '';
+                return;
+            }
+            if (f.size > 5*1024*1024) {
+                alert('Each image must be under 5MB.');
+                this.value = '';
+                return;
+            }
+        }
+    });
+
+    // 预览
+    window.openPreview = function(src) {
+        const preview = document.getElementById('photo-preview');
+        const img = document.getElementById('preview-img');
+        img.src = src;
+        preview.classList.remove('hidden');
+    };
 
     // 拖拽排序
     new Sortable(document.getElementById('photo-grid'), {
@@ -185,13 +195,9 @@
                 id: el.dataset.id,
                 sort: index
             }));
-
             fetch('{{ route("workers.photos.reorder") }}', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
+                headers: {'Content-Type': 'application/json','X-CSRF-TOKEN': '{{ csrf_token() }}'},
                 body: JSON.stringify({ order })
             });
         }
@@ -200,25 +206,18 @@
     // 删除图片
     window.deletePhoto = function(id) {
         if(!confirm('Are you sure to delete this photo?')) return;
-
         fetch(`/worker/photos/${id}`, {
             method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.success){
+            headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'}
+        }).then(res => res.json()).then(data => {
+            if(data.success) {
                 document.querySelector(`[data-id='${id}']`).remove();
-            } else {
-                alert('Delete failed.');
             }
         });
-    }
+    };
+});
 
-    const photosInput = document.getElementById('photosInput');
+const photosInput = document.getElementById('photosInput');
     const photoError = document.getElementById('photos-error');
     photosInput.addEventListener('change', function() {
         const files = this.files;
@@ -241,6 +240,10 @@
             }
         }
     });
-
 </script>
+
+{{-- 预览弹窗 --}}
+<div id="photo-preview" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50" onclick="this.classList.add('hidden')">
+    <img id="preview-img" class="max-w-full max-h-full rounded">
+</div>
 </x-app-layout>
