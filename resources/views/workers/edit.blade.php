@@ -206,15 +206,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // 删除图片
     window.deletePhoto = function(id) {
         if(!confirm('Are you sure to delete this photo?')) return;
+
         fetch(`/worker/photos/${id}`, {
             method: 'DELETE',
-            headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}'}
-        }).then(res => res.json()).then(data => {
-            if(data.success) {
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success){
                 document.querySelector(`[data-id='${id}']`).remove();
+            } else {
+                alert('Delete failed.');
             }
         });
-    };
+    }
 });
 
 const photosInput = document.getElementById('photosInput');
