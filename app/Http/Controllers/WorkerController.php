@@ -8,6 +8,8 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Requests\UpdateWorkerProfileRequest;
+use App\Models\TaskPhoto;
 
 class WorkerController extends Controller
 {
@@ -38,70 +40,92 @@ class WorkerController extends Controller
                 'avatar' => null,
             ]
         );
-        // 关键：加载多图关系（Profile::photos() 你需要已定义）
-        $profile->load('photos');
+        // 关键：加载 profile 的 photos（多图）
+        $photos = TaskPhoto::where('task_job_id', $profile->id)
+                    ->orderBy('sort')
+                    ->get();
 
+        // 加载分类
         $profile->load('categories');
         $categories = Category::orderBy('name')->get();
 
-        return view('workers.edit', compact('profile', 'worker', 'categories'));
+        return view('workers.edit', compact('profile', 'worker', 'categories', 'photos'));
     }
 
-
-    // 更新资料
-    public function update(Request $request)
+    public function update(UpdateWorkerProfileRequest $request)
     {
         $user = Auth::user();
         // // 如果 profile 不存在则创建
-        // $profile = $user->profile ?? new Profile(['user_id' => $user->id]);
+        $profile = $user->profile ?? new Profile(['user_id' => $user->id]);
 
-        $data = $request->validate([
-            'city' => 'required|string|max:255',
-            'bio' => 'nullable|string|max:1000',
-            'avatar' => 'nullable|image|max:2048', // 图片大小限制 2MB
-            'phone' => 'nullable|string|max:255',
-            'skills' => 'nullable|string|max:1000',
-            'photos' => ['nullable', 'array', 'max:10'],                 // 最多10张
-            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], // 每张<=5MB
-            'category_ids' => 'nullable|array|max:10',
-            'category_ids.*' => 'integer|exists:categories,id',
-        ]); 
+        $data = $request->validated();
 
-         // 先拿到或创建 profile（确保有 ID）
-        $profile = \App\Models\Profile::firstOrCreate(
-            ['user_id' => $user->id],
-            [
-                'city' => 'Moose Jaw',
-                'rating' => 0,
-                'total_reviews' => 0,
-                'avatar' => null,
-            ]
-        );
+        // skills = categories 文本拼接
+        $data['skills'] = isset($data['category_ids'])
+            ? Category::whereIn('id', $data['category_ids'])
+                ->pluck('name')
+                ->implode(', ')
+            : '';
 
-        // 处理头像上传
+        // avatar
         if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $data['avatar'] = $avatarPath;
+            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
 
-         // 更新 profile 基础字段（不含 photos）
-        unset($data['photos']); // 避免 update 时把 photos 当字段
+        // 更新基础 profile 字段
         $profile->update($data);
 
-        // 同步多对多分类（没选就清空）
+        // 同步多对多分类
         $profile->categories()->sync($request->input('category_ids', []));
 
+        // photos 上传
         if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $img) {
-                $path = $img->store('profile_photos', 'public'); // 存到 storage/app/public/profile_photos
-                $profile->photos()->create([
+            // 找到已有最大 sort
+            $maxSort = $profile->photos()->max('sort') ?? 0;
+
+            foreach ($request->file('photos') as $index => $photo) {
+                $path = $photo->store('profile_photos', 'public');
+
+                TaskPhoto::create([
+                    'task_job_id' => $profile->id,  // 复用 task_job_id 存 profile id
                     'path' => $path,
-                    'sort' => 0,
+                    'sort' => $maxSort + $index + 1,
                 ]);
             }
         }
 
-        return redirect()->route('workers.edit')->with('success', 'Profile updated successfully!');
-      
+        return back()->with('success', 'Profile updated successfully.');
     }
+
+    // 删除单张图片
+    public function destroyPhoto(TaskPhoto $photo)
+    {
+        $profile = auth()->user()->profile;
+        if($photo->task_job_id != $profile->id) abort(403);
+
+        Storage::disk('public')->delete($photo->path);
+        $photo->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    // 拖拽排序保存
+    public function reorderPhotos(Request $request)
+    {
+        $profile = auth()->user()->profile;
+        $order = $request->input('order', []);
+
+        foreach ($order as $item) {
+            $photo = TaskPhoto::find($item['id']);
+            if($photo && $photo->task_job_id == $profile->id) {
+                $photo->update(['sort' => $item['sort']]);
+            }
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    
+
+
 }

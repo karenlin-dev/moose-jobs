@@ -1,13 +1,11 @@
 <x-app-layout>
-<div class="max-w-2xl mx-auto py-8">
+<div class="max-w-3xl mx-auto py-8">
 
-    <h1 class="text-2xl font-bold mb-4">Edit Worker Profile</h1>
+    <h1 class="text-2xl font-bold mb-6">Edit Worker Profile</h1>
 
-    <div class="flex justify-between items-center mb-4">
-        <a href="{{ route('dashboard') }}" class="text-indigo-600 hover:underline">
-           ← Back to Dashboard
-        </a>
-    </div>
+    <a href="{{ route('dashboard') }}" class="text-indigo-600 hover:underline mb-4 inline-block">
+        ← Back to Dashboard
+    </a>
 
     @if(session('success'))
         <div class="bg-green-100 text-green-800 p-2 mb-4 rounded">
@@ -15,18 +13,21 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('workers.update') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('workers.update') }}" enctype="multipart/form-data" id="profileForm">
         @csrf
 
         {{-- Avatar --}}
         <div class="mb-4">
             <label class="block mb-1 font-medium">Avatar</label>
-            <img src="{{ $profile->avatar
-                ? asset('storage/' . $profile->avatar)
-                : asset('images/default-avatar.png') }}"
-                class="w-24 h-24 rounded-full mb-2">
-            <input type="file" name="avatar" class="border p-1 rounded" accept="image/*">
-            <x-input-error :messages="$errors->get('avatar')" />
+            <img src="{{ $profile->avatar ? asset('storage/' . $profile->avatar) : asset('images/default-avatar.png') }}"
+                 class="w-24 h-24 rounded-full mb-2 object-cover">
+            <input type="file" name="avatar" accept="image/*" class="border p-1 rounded">
+            @php
+                $avatarErrors = collect($errors->get('avatar'))->flatten()->all();
+            @endphp
+            @if($avatarErrors)
+                <x-input-error :messages="$avatarErrors" />
+            @endif
         </div>
 
         {{-- City --}}
@@ -34,8 +35,13 @@
             <x-input-label for="city" value="City" />
             <x-text-input id="city" name="city" type="text"
                 class="mt-1 block w-full"
-                value="{{ old('city', $profile->city ?? 'Moose Jaw') }}" />
-            <x-input-error :messages="$errors->get('city')" />
+                value="{{ old('city', $profile->city ?? '') }}" />
+            @php
+                $cityErrors = collect($errors->get('city'))->flatten()->all();
+            @endphp
+            @if($cityErrors)
+                <x-input-error :messages="$cityErrors" />
+            @endif
         </div>
 
         {{-- Phone --}}
@@ -44,38 +50,44 @@
             <x-text-input id="phone" name="phone" type="text"
                 class="mt-1 block w-full"
                 value="{{ old('phone', $profile->phone ?? '') }}" />
-            <x-input-error :messages="$errors->get('phone')" />
+            @php
+                $phoneErrors = collect($errors->get('phone'))->flatten()->all();
+            @endphp
+            @if($phoneErrors)
+                <x-input-error :messages="$phoneErrors" />
+            @endif
         </div>
 
-        {{-- Skills --}}
-        <div class="mb-4">
-            <x-input-label for="skills" value="Skills (comma separated)" />
-            <x-text-input id="skills" name="skills" type="text"
-                class="mt-1 block w-full"
-                value="{{ old('skills', $profile->skills ?? '') }}" />
-            <x-input-error :messages="$errors->get('skills')" />
-        </div>
-
-        {{-- Categories (multi-select) --}}
+        {{-- Categories --}}
         <div class="mb-4">
             <label class="block mb-1 font-medium">Categories</label>
-
             <div class="grid grid-cols-2 gap-2">
                 @foreach($categories as $cat)
                     <label class="flex items-center gap-2 text-sm">
                         <input type="checkbox"
-                            name="category_ids[]"
-                            value="{{ $cat->id }}"
-                            @checked(in_array($cat->id, old('category_ids', $profile->categories->pluck('id')->all())))
-                        >
+                               name="category_ids[]"
+                               value="{{ $cat->id }}"
+                               class="category-checkbox"
+                               @checked(in_array($cat->id, old('category_ids', $profile->categories->pluck('id')->all())))>
                         <span>{{ $cat->name }}</span>
                     </label>
                 @endforeach
             </div>
-
-            <x-input-error :messages="$errors->get('category_ids')" />
+            @php
+                $categoryErrors = collect($errors->get('category_ids'))->flatten()->all();
+            @endphp
+            @if($categoryErrors)
+                <x-input-error :messages="$categoryErrors" />
+            @endif
         </div>
 
+        {{-- Skills (auto generated from categories) --}}
+        <div class="mb-4">
+            <x-input-label for="skills" value="Skills (auto from Categories)" />
+            <x-text-input id="skills" name="skills" type="text"
+                class="mt-1 block w-full"
+                value="{{ old('skills', $profile->skills ?? '') }}" readonly />
+        </div>
 
         {{-- Bio --}}
         <div class="mb-4">
@@ -83,30 +95,152 @@
             <textarea name="bio"
                       class="w-full border p-2 rounded"
                       rows="4">{{ old('bio', $profile->bio ?? '') }}</textarea>
-            <x-input-error :messages="$errors->get('bio')" />
+            @php
+                $bioErrors = collect($errors->get('bio'))->flatten()->all();
+            @endphp
+            @if($bioErrors)
+                <x-input-error :messages="$bioErrors" />
+            @endif
         </div>
-        {{-- Gallery Photos --}}
+
+        {{-- Photos --}}
         <div class="mb-6">
-            <label class="block mb-1 font-medium">Photos (up to 10)</label>
-            <input type="file" name="photos[]"
-                class="border p-2 rounded w-full"
-                accept="image/*"
-                multiple>
-            <p class="text-xs text-gray-500 mt-1">JPG/PNG/WEBP, max 5MB each.</p>
-            <x-input-error :messages="$errors->get('photos')" />
-            <x-input-error :messages="$errors->get('photos.*')" />
+            <label class="block mb-1 font-medium">Profile Photos (max 10)</label>
+            <input type="file" name="photos[]" id="photosInput" class="border p-2 rounded w-full mb-2" accept="image/*" multiple>
+            <p id="photos-error" class="text-xs text-gray-500 mb-2">JPG/PNG/WEBP only, max 5MB each.</p>
+
+            {{-- 错误显示 --}}
+            @php
+                $photoErrors = collect($errors->get('photos'))->flatten()->all();
+                $photoSubErrors = collect($errors->get('photos.*'))->flatten()->all();
+            @endphp
+            @if(!empty($photoErrors))
+                <x-input-error :messages="$photoErrors" />
+            @endif
+            @if(!empty($photoSubErrors))
+                <x-input-error :messages="$photoSubErrors" />
+            @endif
         </div>
-
-
-        {{-- Rating & Total Reviews (只读) --}}
-        <div class="mb-4 text-sm text-gray-600">
-            ⭐ Rating: {{ $profile->rating ?? 0 }}
-            ({{ $profile->total_reviews ?? 0 }} reviews)
+        {{-- Photo Grid (显示已上传的图片，可删除可拖拽排序) --}}
+        <div id="photo-grid" class="grid grid-cols-3 gap-3 mb-6">
+            @foreach($photos as $photo)
+            <div class="relative group cursor-move" data-id="{{ $photo->id }}">
+                <img src="{{ asset('storage/'.$photo->path) }}" class="w-full h-32 object-cover rounded"
+                     onclick="openPreview(this.src)">
+                <button type="button"
+                        class="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-1 rounded hidden group-hover:block"
+                        onclick="deletePhoto({{ $photo->id }})">✕
+                </button>
+            </div>
+            @endforeach
         </div>
-
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
             Save
         </button>
     </form>
 </div>
+
+{{-- JS --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 动态更新 skills
+        const skillInput = document.getElementById('skills');
+        const checkboxes = document.querySelectorAll('.category-checkbox');
+
+        function updateSkills() {
+            let selected = [];
+            checkboxes.forEach(cb => {
+                if(cb.checked) selected.push(cb.nextElementSibling.textContent);
+            });
+            skillInput.value = selected.join(', ');
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateSkills);
+        });
+        updateSkills(); // 页面加载时同步一次
+
+        // 可扩展：拖拽排序
+        // 使用 SortableJS 或类似库
+    });
+</script>
+    {{-- 预览弹窗 --}}
+    <div id="photo-preview" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50" onclick="this.classList.add('hidden')">
+        <img id="preview-img" class="max-w-full max-h-full rounded">
+    </div>
+    {{-- SortableJS --}}
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+    <script>
+    function openPreview(src) {
+        document.getElementById('preview-img').src = src;
+        document.getElementById('photo-preview').classList.remove('hidden');
+    }
+
+    // 拖拽排序
+    new Sortable(document.getElementById('photo-grid'), {
+        animation: 150,
+        onEnd() {
+            const order = [...document.querySelectorAll('#photo-grid [data-id]')].map((el, index) => ({
+                id: el.dataset.id,
+                sort: index
+            }));
+
+            fetch('{{ route("workers.photos.reorder") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ order })
+            });
+        }
+    });
+
+    // 删除图片
+    window.deletePhoto = function(id) {
+        if(!confirm('Are you sure to delete this photo?')) return;
+
+        fetch(`/worker/photos/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success){
+                document.querySelector(`[data-id='${id}']`).remove();
+            } else {
+                alert('Delete failed.');
+            }
+        });
+    }
+
+    const photosInput = document.getElementById('photosInput');
+    const photoError = document.getElementById('photos-error');
+    photosInput.addEventListener('change', function() {
+        const files = this.files;
+        const existingCount = document.querySelectorAll('#photo-grid [data-id]').length;
+        if (files.length + existingCount > 10) {
+            alert('You can upload up to 10 photos only.');
+            this.value = ''; // 清空选择
+        } else {
+            for (let f of files) {
+                if (!['image/jpeg','image/jpg','image/png','image/webp'].includes(f.type)) {
+                    alert('Only JPG, PNG, WEBP allowed.');
+                    this.value = '';
+                    break;
+                }
+                if (f.size > 5*1024*1024) {
+                    alert('Each image must be under 5MB.');
+                    this.value = '';
+                    break;
+                }
+            }
+        }
+    });
+
+</script>
 </x-app-layout>

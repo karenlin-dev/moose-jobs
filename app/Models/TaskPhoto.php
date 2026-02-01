@@ -8,13 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class TaskPhoto extends Model
 {
     protected $fillable = [
-        'task_id',
+        'task_job_id',
         'path',
         'sort',
     ];
 
     public function task()
     {
-        return $this->belongsTo(TaskJob::class, 'task_id');
+        return $this->belongsTo(TaskJob::class, 'id');
     }
 }
