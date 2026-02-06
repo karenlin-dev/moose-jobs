@@ -88,28 +88,28 @@ class TaskJobController extends Controller
     }
   
 
-        public function myJobs(Request $request)
-        {
-            return TaskJob::where('user_id', $request->user()->id)
-                        ->with('bids.user.profile')
-                        ->latest()
-                        ->get();
+    public function myJobs(Request $request)
+    {
+        return TaskJob::where('user_id', $request->user()->id)
+                    ->with('bids.user.profile')
+                    ->latest()
+                    ->get();
+    }
+
+    public function complete(TaskJob $taskJob, Request $request)
+    {
+        if ($taskJob->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        public function complete(TaskJob $taskJob, Request $request)
-        {
-            if ($taskJob->user_id !== $request->user()->id) {
-                return response()->json(['message' => 'Unauthorized'], 403);
-            }
+        $taskJob->update(['status' => 'completed']);
 
-            $taskJob->update(['status' => 'completed']);
+        $taskJob->assignment?->update([
+            'completed_at' => now()
+        ]);
 
-            $taskJob->assignment?->update([
-                'completed_at' => now()
-            ]);
-
-            return response()->json(['message' => 'Task completed']);
-        }
+        return response()->json(['message' => 'Task completed']);
+    }
 
     public function update(Request $request, $id)
     {

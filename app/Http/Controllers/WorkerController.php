@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UpdateWorkerProfileRequest;
-use App\Models\TaskPhoto;
+use App\Models\ProfilePhoto;
 
 class WorkerController extends Controller
 {
@@ -40,10 +40,11 @@ class WorkerController extends Controller
                 'avatar' => null,
             ]
         );
-        // 关键：加载 profile 的 photos（多图）
-        $photos = TaskPhoto::where('task_job_id', $profile->id)
-                    ->orderBy('sort')
-                    ->get();
+        // // 关键：加载 profile 的 photos（多图）
+        // $photos = TaskPhoto::where('task_job_id', $profile->id)
+        //             ->orderBy('sort')
+        //             ->get();
+        $photos = $profile->photos;
 
         // 加载分类
         $profile->load('categories');
@@ -86,10 +87,15 @@ class WorkerController extends Controller
             foreach ($request->file('photos') as $index => $photo) {
                 $path = $photo->store('profile_photos', 'public');
 
-                TaskPhoto::create([
-                    'task_job_id' => $profile->id,  // 复用 task_job_id 存 profile id
-                    'path' => $path,
-                    'sort' => $maxSort + $index + 1,
+                // TaskPhoto::create([
+                //     'task_job_id' => $profile->id,  // 复用 task_job_id 存 profile id
+                //     'path' => $path,
+                //     'sort' => $maxSort + $index + 1,
+                // ]);
+                ProfilePhoto::create([
+                    'profile_id' => $profile->id,
+                    'path'       => $path,
+                    'sort'       => $maxSort + $index + 1,
                 ]);
             }
         }
@@ -97,11 +103,41 @@ class WorkerController extends Controller
         return back()->with('success', 'Profile updated successfully.');
     }
 
+    // // 删除单张图片
+    // public function destroyPhoto(TaskPhoto $photo)
+    // {
+    //     $profile = auth()->user()->profile;
+    //     if($photo->task_job_id != $profile->id) abort(403);
+
+    //     Storage::disk('public')->delete($photo->path);
+    //     $photo->delete();
+
+    //     return response()->json(['success' => true]);
+    // }
+
+    // // 拖拽排序保存
+    // public function reorderPhotos(Request $request)
+    // {
+    //     $profile = auth()->user()->profile;
+    //     $order = $request->input('order', []);
+
+    //     foreach ($order as $item) {
+    //         $photo = TaskPhoto::find($item['id']);
+    //         if($photo && $photo->task_job_id == $profile->id) {
+    //             $photo->update(['sort' => $item['sort']]);
+    //         }
+    //     }
+
+    //     return response()->json(['success' => true]);
+    // }
     // 删除单张图片
-    public function destroyPhoto(TaskPhoto $photo)
+    public function destroyPhoto(ProfilePhoto $photo)
     {
         $profile = auth()->user()->profile;
-        if($photo->task_job_id != $profile->id) abort(403);
+
+        if ($photo->profile_id !== $profile->id) {
+            abort(403);
+        }
 
         Storage::disk('public')->delete($photo->path);
         $photo->delete();
@@ -109,22 +145,23 @@ class WorkerController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // 拖拽排序保存
     public function reorderPhotos(Request $request)
     {
         $profile = auth()->user()->profile;
         $order = $request->input('order', []);
 
         foreach ($order as $item) {
-            $photo = TaskPhoto::find($item['id']);
-            if($photo && $photo->task_job_id == $profile->id) {
-                $photo->update(['sort' => $item['sort']]);
+            $photo = ProfilePhoto::find($item['id']);
+
+            if ($photo && $photo->profile_id === $profile->id) {
+                $photo->update([
+                    'sort' => $item['sort'],
+                ]);
             }
         }
 
         return response()->json(['success' => true]);
     }
-
     
 
 
