@@ -64,9 +64,6 @@
 
             </div>
 
-            <div class="mt-6 text-sm text-gray-500">
-                Tip: After login, you should land on <code>/</code> (home) instead of <code>/home</code>.
-            </div>
         </div>
 
     </section>
