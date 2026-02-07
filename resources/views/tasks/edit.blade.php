@@ -107,7 +107,8 @@ function deletePhoto(photoId) {
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
             'Accept': 'application/json'
-        }
+        },
+        credentials: 'same-origin'  // 必须带上
     })
     .then(res => res.json())
     .then(data => {

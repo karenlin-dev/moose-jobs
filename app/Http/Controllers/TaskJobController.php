@@ -99,7 +99,7 @@ class TaskJobController extends Controller
 
     public function update(Request $request, TaskJob $task)
     {
-        abort_unless(auth()->id() === $task->user_id, 403);
+        abort_unless((int)auth()->id() === (int)$task->user_id, 403);
 
         $data = $request->validate([
             'title' => 'required|string|max:255',
@@ -124,7 +124,7 @@ class TaskJobController extends Controller
                 ]);
             }
         }
-        return redirect()->route('tasks.index')
+        return redirect()->route('dashboard')
                      ->with('success', 'Task updated successfully!');
     }
 
@@ -132,8 +132,9 @@ class TaskJobController extends Controller
 
     public function edit(TaskJob $task)
     {
-        //$this->authorize('update', $task);
-
+        if ((int)$task->user_id !== (int)auth()->id()) {
+                abort(403);
+        }
         $photos = TaskPhoto::where('task_job_id', $task->id)
             ->orderBy('sort')
             ->get();
@@ -168,7 +169,7 @@ class TaskJobController extends Controller
     {
         // 确保 task 存在
         $taskJob = $photo->taskJob;
-        if (!$taskJob || $taskJob->user_id !== auth()->id()) {
+        if (!$taskJob || (int)$taskJob->user_id !== (int)auth()->id()) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 

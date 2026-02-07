@@ -52,7 +52,7 @@
                     @auth
                         @if(
                             auth()->user()->role === 'employer' &&
-                            auth()->id() === $task->user_id
+                            auth()->id() === (int)$task->user_id
                         )
                             <a href="{{ route('tasks.edit', $task) }}"
                             class="text-sm text-gray-500 hover:text-black hover:underline">
