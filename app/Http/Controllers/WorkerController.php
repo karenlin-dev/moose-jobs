@@ -103,33 +103,6 @@ class WorkerController extends Controller
         return back()->with('success', 'Profile updated successfully.');
     }
 
-    // // 删除单张图片
-    // public function destroyPhoto(TaskPhoto $photo)
-    // {
-    //     $profile = auth()->user()->profile;
-    //     if($photo->task_job_id != $profile->id) abort(403);
-
-    //     Storage::disk('public')->delete($photo->path);
-    //     $photo->delete();
-
-    //     return response()->json(['success' => true]);
-    // }
-
-    // // 拖拽排序保存
-    // public function reorderPhotos(Request $request)
-    // {
-    //     $profile = auth()->user()->profile;
-    //     $order = $request->input('order', []);
-
-    //     foreach ($order as $item) {
-    //         $photo = TaskPhoto::find($item['id']);
-    //         if($photo && $photo->task_job_id == $profile->id) {
-    //             $photo->update(['sort' => $item['sort']]);
-    //         }
-    //     }
-
-    //     return response()->json(['success' => true]);
-    // }
     // 删除单张图片
     public function destroyPhoto(ProfilePhoto $photo)
     {

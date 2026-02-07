@@ -13,8 +13,8 @@ class TaskPhoto extends Model
         'sort',
     ];
 
-    public function task()
+    public function taskJob()
     {
-        return $this->belongsTo(TaskJob::class, 'id');
+        return $this->belongsTo(TaskJob::class, 'task_job_id');
     }
 }

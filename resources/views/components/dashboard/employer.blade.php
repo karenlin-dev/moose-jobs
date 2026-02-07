@@ -47,53 +47,71 @@
             @endforeach
         </div>
 
-
         @forelse($tasks as $task)
-            <div class="bg-white p-6 rounded shadow space-y-2">
-                <h3 class="text-lg font-semibold">{{ $task->title }}</h3>
-                <p class="text-gray-600">{{ $task->description }}</p>
-                <p class="text-sm text-gray-500">
-                    Budget: ${{ $task->budget }} | Status: {{ $task->status }}
-                </p>
-
-                @if($task->bids->count() > 0)
-                    <div class="mt-2">
-                        <h4 class="font-semibold">Bids:</h4>
-                        <ul class="divide-y divide-gray-200">
-                            @foreach($task->bids as $bid)
-                                @php
-                                    $isAccepted = $bid->status === 'accepted';
-                                @endphp
-
-                                <li class="py-2 flex justify-between items-center {{ $isAccepted ? 'bg-green-100 rounded p-2' : '' }}">
-                                    <div>
-                                        <span class="font-medium">{{ $bid->worker->name }}</span> -
-                                        ${{ $bid->price }}
-                                        <span class="text-gray-400 text-sm">({{ $bid->status }})</span>
-                                    </div>
-                                    <div class="flex space-x-2">
-                                        <a href="{{ route('workers.show', $bid->worker) }}"
-                                           class="text-indigo-600 hover:underline">View Profile</a>
-
-                                        @if($bid->status === 'pending' && $task->status === 'open')
-                                            <form class="accept-bid-form" method="POST" action="{{ route('bids.accept', $bid) }}">
-                                                @csrf
-                                                @method('PATCH')
-                                                <x-primary-button>Accept</x-primary-button>
-                                            </form>
-                                        @endif
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @else
-                    <p class="text-gray-500">No bids yet.</p>
+        <div class="bg-white p-6 rounded shadow space-y-2">
+            <h3 class="text-lg font-semibold">{{ $task->title }}</h3>
+            <p class="text-gray-600">{{ $task->description }}</p>
+            <p class="text-sm text-gray-500">
+                Budget: ${{ $task->budget }} | Status: {{ $task->status }}
+            </p>
+            <div class="flex gap-2">
+                @php
+                    $taskUserId = (int) $task->user_id;
+                    $authId = auth()->id();
+                @endphp
+                @if($authId === $taskUserId)
+                    <a href="{{ route('tasks.edit', $task) }}"
+                    class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-sm">
+                        Edit
+                    </a>
                 @endif
-            </div>
-        @empty
-            <p class="text-gray-500">You have not posted any tasks yet.</p>
-        @endforelse
+
+                <a href="{{ route('tasks.show', $task) }}"
+                class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-sm">
+                    View
+                </a>
+
+            </div>  
+
+            @if($task->bids->count() > 0)
+                <div class="mt-2">
+                    <h4 class="font-semibold">Bids:</h4>
+                    <ul class="divide-y divide-gray-200">
+                        @foreach($task->bids as $bid)
+                            @php
+                                $isAccepted = $bid->status === 'accepted';
+                            @endphp
+
+                            <li class="py-2 flex justify-between items-center {{ $isAccepted ? 'bg-green-100 rounded p-2' : '' }}">
+                                <div>
+                                    <span class="font-medium">{{ $bid->worker->name }}</span> -
+                                    ${{ $bid->price }}
+                                    <span class="text-gray-400 text-sm">({{ $bid->status }})</span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <a href="{{ route('workers.show', $bid->worker) }}"
+                                    class="text-indigo-600 hover:underline">View Profile</a>
+
+                                    @if($bid->status === 'pending' && $task->status === 'open')
+                                        <form class="accept-bid-form" method="POST" action="{{ route('bids.accept', $bid) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <x-primary-button>Accept</x-primary-button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @else
+                <p class="text-gray-500">No bids yet.</p>
+            @endif
+        </div>
+    @empty
+        <p class="text-gray-500">You have not posted any tasks yet.</p>
+    @endforelse
+
     </div>
 
     <script>
