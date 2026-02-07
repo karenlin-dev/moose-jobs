@@ -4,25 +4,19 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\TaskJob;
+use App\Models\TaskPhoto;
 use App\Models\Category;
 use Illuminate\Support\Str;
 use App\Enums\JobStatus;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class TaskJobController extends Controller
 {
-    // public function index() {
-    //     //dd('web route hit');
-    //     $tasks = TaskJob::with('user')
-    //         ->where('status', JobStatus::OPEN)
-    //         ->latest()
-    //         ->get();
-
-    //     return view('tasks.index', compact('tasks'));
-    // }
     public function index()
     {
-        $tasks = TaskJob::with(['user', 'category'])
+        $tasks = TaskJob::select('id', 'title', 'description', 'user_id', 'status', 'budget')
+            ->with(['user', 'category'])
             ->where('status', JobStatus::OPEN)
             ->latest()
             ->paginate(12);
@@ -41,14 +35,6 @@ class TaskJobController extends Controller
 
     public function store(Request $request)
     {
-        // 验证请求数据
-        // $validated = $request->validate([
-        //     'title' => 'required|string|max:255',
-        //     'description' => 'required|string',
-        //     'city' => 'required',
-        //     'budget' => 'nullable|numeric|min:0',
-        //     'user_id' => 'required|exists:users,id'
-        // ]);
 
         if ($request->user()->role !== 'employer') {
             abort(403);
@@ -111,24 +97,52 @@ class TaskJobController extends Controller
         return response()->json(['message' => 'Task completed']);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, TaskJob $task)
     {
-        $job = TaskJob::find($id);
+        abort_unless(auth()->id() === $task->user_id, 403);
 
-        if (!$job) {
-            return response()->json(['message' => 'Job not found'], 404);
-        }
-
-        //$job->update($request->all());
-        // 只修改 status 字段
-        $job->status = $request->input('status');
-        $job->save();
-
-        return response()->json([
-            'message' => 'Job updated successfully',
-            'job' => $job
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'city' => 'required|string',
+            'budget' => 'nullable|numeric',
+            'category_id' => 'nullable|exists:categories,id',
+            'photos.*' => 'image|max:5120',
         ]);
+
+        $task->update($data);
+
+        // 新图片
+        if ($request->hasFile('photos')) {
+            $maxSort = $task->photos()->max('sort') ?? 0;
+
+            foreach ($request->file('photos') as $i => $photo) {
+                TaskPhoto::create([
+                    'task_job_id' => $task->id,
+                    'path' => $photo->store('task_photos', 'public'),
+                    'sort' => $maxSort + $i + 1,
+                ]);
+            }
+        }
+        return redirect()->route('tasks.index')
+                     ->with('success', 'Task updated successfully!');
     }
+
+
+
+    public function edit(TaskJob $task)
+    {
+        //$this->authorize('update', $task);
+
+        $photos = TaskPhoto::where('task_job_id', $task->id)
+            ->orderBy('sort')
+            ->get();
+
+        $categories = Category::orderBy('name')->get();
+
+        return view('tasks.edit', compact('task', 'photos', 'categories'));
+    }
+
 
 
     public function show($id)
@@ -149,5 +163,45 @@ class TaskJobController extends Controller
             'message' => 'Job deleted successfully'
         ]);
     }
+
+   public function destroyPhoto(TaskPhoto $photo)
+    {
+        // 确保 task 存在
+        $taskJob = $photo->taskJob;
+        if (!$taskJob || $taskJob->user_id !== auth()->id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        // 删除文件
+        if ($photo->path && Storage::disk('public')->exists($photo->path)) {
+            Storage::disk('public')->delete($photo->path);
+        }
+        $photo->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+
+
+    public function reorderPhotos(Request $request)
+    {
+        $order = $request->input('order', []);
+
+        foreach ($order as $item) {
+            $photo = TaskPhoto::find($item['id']);
+
+            if (!$photo) continue;
+
+            // 核心：通过 task → user 校验
+            if ($photo->task->user_id !== auth()->id()) {
+                abort(403);
+            }
+
+            $photo->update(['sort' => $item['sort']]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
 
 }

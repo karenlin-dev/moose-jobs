@@ -117,8 +117,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/tasks', [TaskJobController::class, 'store'])
         ->name('tasks.store');
-    // Route::get('/tasks', [TaskJobController::class, 'index'])
-    //     ->name('tasks.index');
 });
 
 /**
@@ -126,6 +124,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
  */
 Route::get('/tasks', [TaskJobController::class, 'index'])->name('tasks.index');
 Route::get('/tasks/{task}', [TaskJobController::class, 'show'])->name('tasks.show'); // 建议加上
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/tasks/{task}/edit', [TaskJobController::class, 'edit'])
+        ->name('tasks.edit');
+
+    Route::put('/tasks/{task}', [TaskJobController::class, 'update'])
+        ->name('tasks.update');
+
+    Route::delete('/tasks/photos/{photo}', [TaskJobController::class, 'destroyPhoto'])
+        ->name('tasks.photos.destroy');
+
+    Route::post('/tasks/photos/reorder', [TaskJobController::class, 'reorderPhotos'])
+        ->name('tasks.photos.reorder');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/tasks/{task}/bid', [BidController::class, 'create'])
@@ -144,6 +156,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/assignments/{assignment}/complete', [JobAssignmentController::class, 'complete'])->name('assignments.complete');
 
 });
+
 
 
 Route::middleware('auth')->group(function () {

@@ -44,10 +44,22 @@
 
                 <div class="shrink-0 flex flex-col items-end gap-2">
                     <a href="{{ route('tasks.show', $task) }}"
-                       class="text-gray-700 hover:underline text-sm">
+                    class="text-gray-700 hover:underline text-sm">
                         View →
                     </a>
 
+                    {{-- Edit：只有 task owner 才能看到 --}}
+                    @auth
+                        @if(
+                            auth()->user()->role === 'employer' &&
+                            auth()->id() === $task->user_id
+                        )
+                            <a href="{{ route('tasks.edit', $task) }}"
+                            class="text-sm text-gray-500 hover:text-black hover:underline">
+                                Edit ✎
+                            </a>
+                        @endif
+                    @endauth
                     {{-- 只有登录且是 worker 才能投标 --}}
                     @auth
                         @if(auth()->user()->role === 'worker')
