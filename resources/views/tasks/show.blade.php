@@ -25,7 +25,13 @@
                     {{ $task->category->name }}
                 </span>
             @endif
-
+             {{-- 跑腿任务地址 --}}
+            @if($task->category?->slug === 'errand')
+                <div class="mt-2 text-sm text-gray-600">
+                    <p><strong>Pickup Address:</strong> {{ $task->pickup_address ?? 'N/A' }}</p>
+                    <p><strong>Drop-off Address:</strong> {{ $task->dropoff_address ?? 'N/A' }}</p>
+                </div>
+            @endif
             <hr>
 
             <h3 class="font-semibold">Description</h3>
@@ -47,6 +53,53 @@
 
         </div>
 
+        {{-- Delivery Status --}}
+        @if($task->pickup_address || $task->dropoff_address)
+            @php
+                $statusOrder = ['pending', 'in_transit', 'delivered'];
+                $labels = [
+                    'pending' => 'Waiting for Pickup',
+                    'in_transit' => 'In Transit',
+                    'delivered' => 'Delivered',
+                ];
+                $currentIndex = array_search($task->delivery_status ?? 'pending', $statusOrder);
+            @endphp
+
+            <div class="mt-6">
+                <h3 class="font-semibold mb-4">Delivery Status</h3>
+
+                <div class="flex items-center">
+                    @foreach($statusOrder as $index => $key)
+                        {{-- Step --}}
+                        <div class="flex items-center">
+                            {{-- 圆点 --}}
+                            <div
+                                class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                {{ $index < $currentIndex ? 'bg-green-500 text-white' : '' }}
+                                {{ $index === $currentIndex && $key !== 'pending' ? 'bg-blue-500 text-white' : '' }}
+                                {{ $index > $currentIndex || ($key === 'pending' && $currentIndex === 0) ? 'bg-gray-300 text-gray-600' : '' }}"
+                            >
+                                {{ $index + 1 }}
+                            </div>
+
+                            {{-- 连接线 --}}
+                            @if(!$loop->last)
+                                <div class="w-16 h-1
+                                    {{ $index < $currentIndex ? 'bg-green-500' : 'bg-gray-300' }}">
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- 状态文字 --}}
+                <div class="flex justify-between text-xs text-gray-600 mt-2">
+                    @foreach($statusOrder as $key)
+                        <span>{{ $labels[$key] }}</span>
+                    @endforeach
+                </div>
+            </div>
+        @endif
         {{-- ===================== --}}
         {{-- 投标入口（Worker） --}}
         {{-- ===================== --}}

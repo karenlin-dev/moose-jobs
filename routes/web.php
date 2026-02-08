@@ -123,6 +123,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
  * Public (guest can browse)
  */
 Route::get('/tasks', [TaskJobController::class, 'index'])->name('tasks.index');
+Route::get('/tasks/errands', [TaskJobController::class, 'errands'])
+    ->name('tasks.errands');
 Route::get('/tasks/{task}', [TaskJobController::class, 'show'])->name('tasks.show'); // 建议加上
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -131,6 +133,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::put('/tasks/{task}', [TaskJobController::class, 'update'])
         ->name('tasks.update');
+    Route::patch('/tasks/{task}/quick-accept', [TaskJobController::class, 'quickAccept'])
+    ->name('tasks.quickAccept');
+    Route::patch('/tasks/{task}/complete', [TaskJobController::class, 'complete'])
+        ->name('tasks.complete');
 
     Route::delete('/tasks/photos/{photo}', [TaskJobController::class, 'destroyPhoto'])
         ->name('tasks.photos.destroy');

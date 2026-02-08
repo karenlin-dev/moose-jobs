@@ -70,7 +70,30 @@
                 class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-sm">
                     View
                 </a>
+                {{-- Quick Complete --}}
+                @if(
+                    $authId === $taskUserId &&
+                    $task->status !== 'completed'
+                )
+                    <button
+                        onclick="quickComplete({{ $task->id }})"
+                        class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm">
+                        ✓ Complete
+                    </button>
+                @endif
 
+                {{-- Quick Accept --}}
+                @if(
+                    $authId === $taskUserId &&
+                    $task->status === 'open' &&
+                    $task->bids->where('status','pending')->count() > 0
+                )
+                    <button
+                        onclick="quickAccept({{ $task->id }})"
+                        class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 text-sm">
+                        ⚡ Accept Bid
+                    </button>
+                @endif
             </div>  
 
             @if($task->bids->count() > 0)
@@ -150,4 +173,42 @@
         });
     });
     </script>
+    <script>
+    function quickComplete(taskId) {
+        if (!confirm('Mark this task as completed?')) return;
+
+        fetch(`/tasks/${taskId}/complete`, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+        })
+        .then(res => res.json())
+        .then(json => {
+            alert(json.message);
+            location.reload();
+        })
+        .catch(err => console.error(err));
+    }
+
+    function quickAccept(taskId) {
+        if (!confirm('Accept the first pending bid?')) return;
+
+        fetch(`/tasks/${taskId}/quick-accept`, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+        })
+        .then(res => res.json())
+        .then(json => {
+            alert(json.message);
+            location.reload();
+        })
+        .catch(err => console.error(err));
+    }
+    </script>
+
 </x-app-layout>

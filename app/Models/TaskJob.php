@@ -17,6 +17,8 @@ class TaskJob extends Model
         'city',//
         'budget',//
         'category_id',
+        'pickup_address',
+        'dropoff_address',
         'status'//
     ];
 
