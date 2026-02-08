@@ -61,70 +61,70 @@ class BidController extends Controller
 
         return redirect()->route('dashboard')
                         ->with('success', 'Bid submitted successfully.');
-}
-
-
-public function accept(Bid $bid, Request $request)
-{
-    //dd($bid->task);
-    // 获取任务
-    $task = $bid->task; // 确保 Bid 模型有 task() 关联
-    
-    if (!$task) {
-        return response()->json(['message' => 'Task not found'], 404);
     }
 
-    // 权限校验：只能雇主本人操作
-    if ($task->user_id !== $request->user()->id) {
-        return response()->json(['message' => 'Unauthorized'], 403);
-    }
 
-    // 状态校验
-    if ($task->status !== JobStatus::OPEN) {
-        return response()->json(['message' => 'Task not open'], 400);
-    }
+    public function accept(Bid $bid, Request $request)
+    {
+        //dd($bid->task);
+        // 获取任务
+        $task = $bid->task; // 确保 Bid 模型有 task() 关联
+        
+        if (!$task) {
+            return response()->json(['message' => 'Task not found'], 404);
+        }
 
-    // Bid 状态校验
-    if ($bid->status !== BidStatus::PENDING) {
-        return response()->json(['message' => 'Bid already processed'], 400);
-    }
+        // 权限校验：只能雇主本人操作
+        if ($task->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
-    // 使用事务防并发
-    DB::transaction(function () use ($bid, $task) {
+        // 状态校验
+        if ($task->status !== JobStatus::OPEN) {
+            return response()->json(['message' => 'Task not open'], 400);
+        }
 
-        // 锁定任务
-        $task->lockForUpdate();
+        // Bid 状态校验
+        if ($bid->status !== BidStatus::PENDING) {
+            return response()->json(['message' => 'Bid already processed'], 400);
+        }
 
-        // 接受当前 bid
-        $bid->update([
-            'status' => BidStatus::ACCEPTED,
-        ]);
+        // 使用事务防并发
+        DB::transaction(function () use ($bid, $task) {
 
-        // 拒绝其他 pending bids
-        Bid::where('job_id', $task->id)
-            ->where('status', BidStatus::PENDING)
-            ->where('id', '!=', $bid->id)
-            ->update([
-                'status' => BidStatus::REJECTED,
+            // 锁定任务
+            $task->lockForUpdate();
+
+            // 接受当前 bid
+            $bid->update([
+                'status' => BidStatus::ACCEPTED,
             ]);
 
-        // 创建任务分配记录
-        JobAssignment::create([
-            'job_id'   => $task->id,
-            'employer_id'   => $task->user_id,
-            'worker_id'     => $bid->user_id,
-            'agreed_price'  => $bid->price,
-            'started_at'    => now(),
-        ]);
+            // 拒绝其他 pending bids
+            Bid::where('job_id', $task->id)
+                ->where('status', BidStatus::PENDING)
+                ->where('id', '!=', $bid->id)
+                ->update([
+                    'status' => BidStatus::REJECTED,
+                ]);
 
-        // 更新任务状态
-        $task->update([
-            'status' => JobStatus::IN_PROGRESS,
-        ]);
-    });
+            // 创建任务分配记录
+            JobAssignment::create([
+                'job_id'   => $task->id,
+                'employer_id'   => $task->user_id,
+                'worker_id'     => $bid->user_id,
+                'agreed_price'  => $bid->price,
+                'started_at'    => now(),
+            ]);
 
-    return response()->json(['message' => 'Bid accepted successfully']);
-}
+            // 更新任务状态
+            $task->update([
+                'status' => JobStatus::IN_PROGRESS,
+            ]);
+        });
+
+        return response()->json(['message' => 'Bid accepted successfully']);
+    }
 
     public function myBids(Request $request)
     {

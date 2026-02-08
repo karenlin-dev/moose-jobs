@@ -6,24 +6,35 @@ use Illuminate\Http\Request;
 use App\Models\TaskJob;
 use App\Models\TaskPhoto;
 use App\Models\Category;
+use App\Enums\BidStatus;
 use Illuminate\Support\Str;
 use App\Enums\JobStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log; 
 
 class TaskJobController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $slug = $request->query('category'); // URL: /tasks?category=errand
+
+        // 获取所有分类，用于 Blade 的选项卡
+        $categories = \App\Models\Category::orderBy('name')->get();
+
         $tasks = TaskJob::select('id', 'title', 'description', 'user_id', 'status', 'budget')
-            ->with(['user', 'category'])
+            ->with(['user', 'category', 'bids']) // 加 bids 方便快速接受按钮显示
             ->where('status', JobStatus::OPEN)
+            ->when($slug, function($query) use ($slug) {
+                $query->whereHas('category', function($q) use ($slug) {
+                    $q->where('slug', $slug);
+                });
+            })
             ->latest()
             ->paginate(12);
 
-        return view('tasks.index', compact('tasks'));
+        return view('tasks.index', compact('tasks', 'categories', 'slug'));
     }
-
 
     public function create()
     {
@@ -46,6 +57,8 @@ class TaskJobController extends Controller
             'city' => 'required|string|max:100',
             'budget' => 'required|numeric|min:0',
             'category_id' => 'nullable|integer|exists:categories,id',
+            'pickup_address' => 'nullable|string|max:255',
+            'dropoff_address' => 'nullable|string|max:255',
             'photos' => ['nullable', 'array', 'max:10'],
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
@@ -57,6 +70,8 @@ class TaskJobController extends Controller
             'city' => $request->city,
             'budget' => $request->budget, 
             'category_id' => $request->category_id,
+            'pickup_address' => $request->pickup_address,
+            'dropoff_address' => $request->dropoff_address,
             'status' => JobStatus::OPEN,
         ]);
         // 保存多张图片
@@ -82,19 +97,43 @@ class TaskJobController extends Controller
                     ->get();
     }
 
-    public function complete(TaskJob $taskJob, Request $request)
+    public function complete(TaskJob $task, Request $request)
     {
-        if ($taskJob->user_id !== $request->user()->id) {
+        if ((int)$task->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
+        // 状态检查（可选，避免重复完成）
+        if ($task->status === JobStatus::COMPLETED) {
+            return response()->json(['message' => 'Task already completed'], 400);
+        }
 
-        $taskJob->update(['status' => 'completed']);
+        $task->update(['status' => JobStatus::COMPLETED]);
 
-        $taskJob->assignment?->update([
+        $task->assignment?->update([
             'completed_at' => now()
         ]);
 
-        return response()->json(['message' => 'Task completed']);
+        return response()->json([
+            'message' => 'Task marked as completed',
+            'task_id' => $task->id
+        ]);
+    }
+
+    public function quickAccept(TaskJob $task, Request $request)
+    {
+        // 权限校验：雇主本人
+        if ((int)$task->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // 找第一个 pending bid
+        $bid = $task->bids()->where('status', BidStatus::PENDING)->first();
+        if (!$bid) {
+            return response()->json(['message' => 'No pending bids'], 400);
+        }
+
+        // 调用现有 accept 方法逻辑
+        return app(BidController::class)->accept($bid, $request);
     }
 
     public function update(Request $request, TaskJob $task)
@@ -107,6 +146,10 @@ class TaskJobController extends Controller
             'city' => 'required|string',
             'budget' => 'nullable|numeric',
             'category_id' => 'nullable|exists:categories,id',
+            'pickup_address' => 'nullable|string|max:255',
+            'dropoff_address' => 'nullable|string|max:255',
+            'dropoff_address' => 'nullable|string|max:255',
+            'delivery_status' => 'required|in:pending,in_transit,delivered',
             'photos.*' => 'image|max:5120',
         ]);
 
@@ -148,9 +191,7 @@ class TaskJobController extends Controller
 
     public function show($id)
     {
-        //$task = TaskJob::findOrFail($id);
-        // eager load
-        $task = TaskJob::with('photos')->findOrFail($id);
+        $task = TaskJob::with(['photos', 'category'])->findOrFail($id);
 
         return view('tasks.show', compact('task'));
     }
@@ -202,6 +243,22 @@ class TaskJobController extends Controller
         }
 
         return response()->json(['success' => true]);
+    }
+
+    public function errands(Request $request)
+    {
+        $categories = Category::orderBy('name')->get();
+
+        // 获取 Errand 分类
+        $errandCategory = Category::where('slug', 'errand')->first();
+
+        $tasks = TaskJob::with(['user', 'category', 'bids'])
+            ->where('status', JobStatus::OPEN)
+            ->when($errandCategory, fn($q) => $q->where('category_id', $errandCategory->id))
+            ->latest()
+            ->paginate(12);
+
+        return view('tasks.errands', compact('tasks', 'categories'));
     }
 
 
