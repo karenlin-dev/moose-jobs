@@ -75,7 +75,7 @@ class BidController extends Controller
         }
 
         // 权限校验：只能雇主本人操作
-        if ($task->user_id !== $request->user()->id) {
+        if ((int)$task->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
