@@ -19,6 +19,9 @@ class TaskJob extends Model
         'category_id',
         'pickup_address',
         'dropoff_address',
+        'distance_km',
+        'weight_kg',
+        'size_level',
         'status'//
     ];
 

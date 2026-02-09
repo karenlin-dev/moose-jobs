@@ -61,20 +61,49 @@
                             @endforeach
                         </select>
                     @endif
+                    <div class="mt-6 space-y-2">
+                        <h3 class="font-semibold">Delivery Route Preview</h3>
+                        <div
+                            id="map"
+                            class="w-full rounded border"
+                            style="height: 320px;"
+                        ></div>
+                    </div>
+
+                    <input name="distance_km" id="distance_km">
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium">Package Weight (kg)</label>
+                        <input
+                            id="weight_kg"
+                            name="weight_kg"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            class="w-full border rounded px-3 py-2"
+                            value="{{ old('weight_kg', $task->weight_kg ?? '') }}"
+                            placeholder="e.g. 5"
+                        >
+                    </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium">Package Size</label>
+                        <select
+                            id="size_level"
+                            name="size_level"
+                            class="w-full border rounded px-3 py-2"
+                        >
+                            <option value="">Select size</option>
+                            <option value="small" @selected(old('size_level', $task->size_level ?? '') === 'small')>
+                                Small (fits in a backpack)
+                            </option>
+                            <option value="medium" @selected(old('size_level', $task->size_level ?? '') === 'medium')>
+                                Medium (fits in car trunk)
+                            </option>
+                            <option value="large" @selected(old('size_level', $task->size_level ?? '') === 'large')>
+                                Large (needs SUV / van)
+                            </option>
+                        </select>
+                    </div>
                 </div>
-              
-                <div class="mt-6 space-y-2">
-                    <h3 class="font-semibold">Delivery Route Preview</h3>
-
-                    <div
-                        id="map"
-                        class="w-full rounded border"
-                        style="height: 320px;"
-                    ></div>
-                </div>
-
-                
-
                 {{-- Task Photos --}}
                 <div>
                     <x-input-label for="photos" value="Task Photos (up to 10)" />
@@ -218,74 +247,111 @@
         });
         </script>
         
-<script>
-    let map, directionsService, directionsRenderer;
-    let pickupAutocomplete, dropoffAutocomplete;
+        <script>
+                let map, directionsService, directionsRenderer;
+                let pickupAutocomplete, dropoffAutocomplete;
 
-    const MOOSE_JAW = { lat: 50.3933, lng: -105.5516 };
+                const MOOSE_JAW = { lat: 50.3933, lng: -105.5516 };
 
-    function initMap() {
-        console.log('✅ initMap fired');
+                // 定价参数（统一在这里）
+                const BASE_PRICE = 8;
+                const PRICE_PER_KM = 1.5;
 
-        const mapEl = document.getElementById('map');
-        if (!mapEl) return;
+                function initMap() {
+                    console.log('✅ initMap fired');
 
-        map = new google.maps.Map(mapEl, {
-            zoom: 12,
-            center: MOOSE_JAW
-        });
+                    const mapEl = document.getElementById('map');
+                    if (!mapEl) return;
 
-        directionsService = new google.maps.DirectionsService();
-        directionsRenderer = new google.maps.DirectionsRenderer({ map });
+                    map = new google.maps.Map(mapEl, {
+                        zoom: 12,
+                        center: MOOSE_JAW
+                    });
 
-        initAutocomplete();
-        drawRoute();
-    }
+                    directionsService = new google.maps.DirectionsService();
+                    directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
-    function initAutocomplete() {
-        const options = {
-            bounds: new google.maps.LatLngBounds(
-                { lat: 50.33, lng: -105.65 },   // Moose Jaw SW
-                { lat: 50.45, lng: -105.45 }    // Moose Jaw NE
-            ),
-            strictBounds: true,
-            componentRestrictions: { country: 'ca' },
-            fields: ['formatted_address']
-        };
+                    initAutocomplete();
+                    drawRoute();
+                }
 
-        const pickupInput = document.getElementById('pickup_address');
-        const dropoffInput = document.getElementById('dropoff_address');
+                function initAutocomplete() {
+                    const options = {
+                        bounds: new google.maps.LatLngBounds(
+                            { lat: 50.33, lng: -105.65 },
+                            { lat: 50.45, lng: -105.45 }
+                        ),
+                        strictBounds: true,
+                        componentRestrictions: { country: 'ca' }
+                    };
 
-        if (pickupInput) {
-            pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
-            pickupAutocomplete.addListener('place_changed', drawRoute);
-        }
+                    const pickupInput = document.getElementById('pickup_address');
+                    const dropoffInput = document.getElementById('dropoff_address');
 
-        if (dropoffInput) {
-            dropoffAutocomplete = new google.maps.places.Autocomplete(dropoffInput, options);
-            dropoffAutocomplete.addListener('place_changed', drawRoute);
-        }
-    }
+                    if (pickupInput) {
+                        pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
+                        pickupAutocomplete.addListener('place_changed', drawRoute);
+                    }
 
-    function drawRoute() {
-        const pickup = document.getElementById('pickup_address')?.value;
-        const dropoff = document.getElementById('dropoff_address')?.value;
+                    if (dropoffInput) {
+                        dropoffAutocomplete = new google.maps.places.Autocomplete(dropoffInput, options);
+                        dropoffAutocomplete.addListener('place_changed', drawRoute);
+                    }
 
-        if (!pickup || !dropoff) return;
+                    // 重量 / 体积变化时重新算价格
+                    document.getElementById('weight_kg')?.addEventListener('change', recalcBudget);
+                    document.getElementById('size_level')?.addEventListener('change', recalcBudget);
+                }
 
-        document.getElementById('map').classList.remove('hidden');
+                function drawRoute() {
+                    const pickup = document.getElementById('pickup_address')?.value;
+                    const dropoff = document.getElementById('dropoff_address')?.value;
 
-        directionsService.route({
-            origin: pickup,
-            destination: dropoff,
-            travelMode: google.maps.TravelMode.DRIVING
-        }, (result, status) => {
-            if (status === 'OK') {
-                directionsRenderer.setDirections(result);
-            }
-        });
-    }
-</script>
+                    if (!pickup || !dropoff) return;
+
+                    document.getElementById('map')?.classList.remove('hidden');
+
+                    directionsService.route({
+                        origin: pickup + ', Moose Jaw, SK',
+                        destination: dropoff + ', Moose Jaw, SK',
+                        travelMode: google.maps.TravelMode.DRIVING
+                    }, (result, status) => {
+                        if (status !== 'OK') return;
+
+                        directionsRenderer.setDirections(result);
+
+                        const meters = result.routes[0].legs[0].distance.value;
+                        const km = meters / 1000;
+
+                        document.getElementById('distance_km').value = km.toFixed(2);
+
+                        updateBudget(km);
+                    });
+                }
+
+                function recalcBudget() {
+                    const km = parseFloat(document.getElementById('distance_km').value);
+                    if (!km) return;
+                    updateBudget(km);
+                }
+
+                function updateBudget(distanceKm) {
+                    const weight = parseFloat(document.getElementById('weight_kg')?.value || 0);
+                    const size = document.getElementById('size_level')?.value;
+
+                    let price = BASE_PRICE + distanceKm * PRICE_PER_KM;
+
+                    // 重量加价
+                    if (weight > 5 && weight <= 10) price += 5;
+                    else if (weight > 10) price += 10;
+
+                    // 体积加价
+                    if (size === 'medium') price += 5;
+                    if (size === 'large') price += 12;
+
+                    document.getElementById('budget').value = price.toFixed(2);
+                }
+        </script>
 
 <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGATCJGWfLxnjcMnvNz_TWigdxfX4x0Xg&libraries=places&callback=initMap"
