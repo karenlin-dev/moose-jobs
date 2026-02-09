@@ -100,6 +100,23 @@
                 </div>
             </div>
         @endif
+        @if($task->pickup_address && $task->dropoff_address)
+            <div class="mt-6 space-y-4">
+                <h3 class="font-semibold">Delivery Route</h3>
+
+                <div class="w-full h-80 rounded overflow-hidden border">
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        style="border:0"
+                        loading="lazy"
+                        allowfullscreen
+                        src="https://www.google.com/maps?saddr={{ urlencode($task->pickup_address) }}&daddr={{ urlencode($task->dropoff_address) }}&output=embed">
+                    </iframe>
+                </div>
+            </div>
+        @endif
+
         {{-- ===================== --}}
         {{-- 投标入口（Worker） --}}
         {{-- ===================== --}}

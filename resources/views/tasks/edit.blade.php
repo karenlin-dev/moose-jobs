@@ -63,7 +63,15 @@
                     <x-input-error :messages="$errors->get('dropoff_address')" />
                 </div>
             </div>
-
+           
+            <div class="mt-6 space-y-2">
+                    <h3 class="font-semibold">Delivery Route Preview</h3>
+                    <div
+                        id="map"
+                        class="w-full rounded border"
+                        style="height: 320px;"
+                    ></div>
+                </div>
 
             {{-- Photos Upload --}}
             <div>
@@ -159,22 +167,82 @@
         }
     });
     </script>
-     <script>
-            document.addEventListener('DOMContentLoaded', () => {
-            const categorySelect = document.getElementById('category_id');
-            const errandFields = document.getElementById('errand-fields');
+    <script>
+    let map, directionsService, directionsRenderer;
+    let pickupAutocomplete, dropoffAutocomplete;
 
-            function toggleErrandFields() {
-                const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-                const slug = selectedOption.dataset.slug; // 读取 data-slug
-                errandFields.classList.toggle('hidden', slug !== 'errand');
-            }
+    const MOOSE_JAW = { lat: 50.3933, lng: -105.5516 };
 
-            // 初始化显示状态
-            toggleErrandFields();
+    function initMap() {
+        console.log('✅ initMap fired');
 
-            // 监听 change
-            categorySelect.addEventListener('change', toggleErrandFields);
+        const mapEl = document.getElementById('map');
+        if (!mapEl) return;
+
+        map = new google.maps.Map(mapEl, {
+            zoom: 12,
+            center: MOOSE_JAW
         });
-        </script>
+
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer({ map });
+
+        initAutocomplete();
+        drawRoute();
+    }
+
+    function initAutocomplete() {
+        const options = {
+            bounds: new google.maps.LatLngBounds(
+                { lat: 50.33, lng: -105.65 },   // Moose Jaw SW
+                { lat: 50.45, lng: -105.45 }    // Moose Jaw NE
+            ),
+            strictBounds: true,
+            componentRestrictions: { country: 'ca' },
+            fields: ['formatted_address']
+        };
+
+        const pickupInput = document.getElementById('pickup_address');
+        const dropoffInput = document.getElementById('dropoff_address');
+
+        if (pickupInput) {
+            pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
+            pickupAutocomplete.addListener('place_changed', drawRoute);
+        }
+
+        if (dropoffInput) {
+            dropoffAutocomplete = new google.maps.places.Autocomplete(dropoffInput, options);
+            dropoffAutocomplete.addListener('place_changed', drawRoute);
+        }
+    }
+
+    function drawRoute() {
+        const pickup = document.getElementById('pickup_address')?.value;
+        const dropoff = document.getElementById('dropoff_address')?.value;
+
+        if (!pickup || !dropoff) return;
+
+        document.getElementById('map').classList.remove('hidden');
+
+        directionsService.route({
+            origin: pickup,
+            destination: dropoff,
+            travelMode: google.maps.TravelMode.DRIVING
+        }, (result, status) => {
+            if (status === 'OK') {
+                directionsRenderer.setDirections(result);
+            }
+        });
+    }
+</script>
+
+<script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGATCJGWfLxnjcMnvNz_TWigdxfX4x0Xg&libraries=places&callback=initMap"
+    async
+    defer>
+</script>
+
+
+
+
 </x-app-layout>
