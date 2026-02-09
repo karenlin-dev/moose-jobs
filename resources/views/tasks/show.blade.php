@@ -116,6 +116,22 @@
                 </div>
             </div>
         @endif
+        @if($task->distance_km)
+            <p class="text-xs text-gray-500">
+                Distance: {{ $task->distance_km }} km
+            </p>
+        @endif
+        <pre class="text-xs text-gray-500">
+        {{ json_encode($task->only(['distance_km','weight_kg','size_level']), JSON_PRETTY_PRINT) }}
+        </pre>
+    
+        @if($task->weight_kg || $task->size_level)
+            <div class="text-sm text-gray-600 mt-2">
+                📦
+                {{ $task->weight_kg ? $task->weight_kg.' kg' : '' }}
+                {{ $task->size_level ? ucfirst($task->size_level).' size' : '' }}
+            </div>
+        @endif
 
         {{-- ===================== --}}
         {{-- 投标入口（Worker） --}}

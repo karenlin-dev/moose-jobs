@@ -46,47 +46,62 @@ class TaskJobController extends Controller
 
     public function store(Request $request)
     {
-
         if ($request->user()->role !== 'employer') {
             abort(403);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'city' => 'required|string|max:100',
             'budget' => 'required|numeric|min:0',
             'category_id' => 'nullable|integer|exists:categories,id',
+
             'pickup_address' => 'nullable|string|max:255',
             'dropoff_address' => 'nullable|string|max:255',
+            'distance_km' => 'nullable|numeric|min:0',
+
+            'weight_kg' => 'nullable|numeric|min:0|max:25',
+            'size_level' => 'nullable|in:small,medium,large',
+
             'photos' => ['nullable', 'array', 'max:10'],
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $task = TaskJob::create([
             'user_id' => Auth::id(),
-            'title' => $request->title,
-            'description' => $request->description,
-            'city' => $request->city,
-            'budget' => $request->budget, 
-            'category_id' => $request->category_id,
-            'pickup_address' => $request->pickup_address,
-            'dropoff_address' => $request->dropoff_address,
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'city' => $validated['city'],
+            'budget' => $validated['budget'],
+            'category_id' => $validated['category_id'] ?? null,
+
+            'pickup_address' => $validated['pickup_address'] ?? null,
+            'dropoff_address' => $validated['dropoff_address'] ?? null,
+            'distance_km' => $validated['distance_km'] ?? null,
+
+            'weight_kg' => $validated['weight_kg'] ?? null,
+            'size_level' => $validated['size_level'] ?? null,
+
             'status' => JobStatus::OPEN,
         ]);
+
         // 保存多张图片
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $img) {
-                $path = $img->store('task_photos', 'public'); // 存到 storage/app/public/task_photos
+                $path = $img->store('task_photos', 'public');
                 $task->photos()->create([
                     'path' => $path,
                     'sort' => 0,
                 ]);
             }
         }
-        return redirect()->route('dashboard')->with('success', 'Task created successfully.');
-  
+
+        return redirect()
+            ->route('dashboard')
+            ->with('success', 'Task created successfully.');
     }
+
   
 
     public function myJobs(Request $request)
@@ -150,6 +165,9 @@ class TaskJobController extends Controller
             'dropoff_address' => 'nullable|string|max:255',
             'dropoff_address' => 'nullable|string|max:255',
             'delivery_status' => 'required|in:pending,in_transit,delivered',
+            'distance_km' => 'nullable|numeric|min:0',
+            'weight_kg' => 'nullable|numeric|min:0|max:25',
+            'size_level' => 'nullable|in:small,medium,large',
             'photos.*' => 'image|max:5120',
         ]);
 
