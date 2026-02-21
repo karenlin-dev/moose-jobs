@@ -69,8 +69,10 @@
                             style="height: 320px;"
                         ></div>
                     </div>
-
-                    <input name="distance_km" id="distance_km">
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium">Distance (km)</label>
+                        <input name="distance_km" id="distance_km">
+                    </div>
                     <div class="mt-4">
                         <label class="block text-sm font-medium">Package Weight (kg)</label>
                         <input
