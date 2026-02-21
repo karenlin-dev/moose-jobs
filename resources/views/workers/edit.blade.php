@@ -1,12 +1,10 @@
+ @php use Illuminate\Support\Str; @endphp
 <x-app-layout>
-<div class="max-w-3xl mx-auto py-8">
-
+<div class="max-w-3xl mx-auto py-8"> 
     <h1 class="text-2xl font-bold mb-6">Edit Worker Profile</h1>
-
     <a href="{{ route('dashboard') }}" class="text-indigo-600 hover:underline mb-4 inline-block">
         ← Back to Dashboard
     </a>
-
     @if(session('success'))
         <div class="bg-green-100 text-green-800 p-2 mb-4 rounded">
             {{ session('success') }}
@@ -106,8 +104,10 @@
         {{-- Photos --}}
         <div class="mb-6">
             <label class="block mb-1 font-medium">Profile Photos (max 10)</label>
-            <input type="file" name="photos[]" id="photosInput" class="border p-2 rounded w-full mb-2" accept="image/*" multiple>
-            <p id="photos-error" class="text-xs text-gray-500 mb-2">JPG/PNG/WEBP only, max 5MB each.</p>
+            <input type="file" name="photos[]" id="photosInput" class="border p-2 rounded w-full mb-2" accept="image/*,video/mp4" multiple>
+            <p id="photos-error" class="text-xs text-gray-500 mb-2">
+                Upload up to 10 files: JPG/PNG/WEBP images (max 5MB) or MP4 videos (max 50MB).
+            </p>
 
             {{-- 错误显示 --}}
             @php
@@ -125,8 +125,15 @@
         <div id="photo-grid" class="grid grid-cols-3 gap-3 mb-6">
             @foreach($photos as $photo)
             <div class="relative group cursor-move" data-id="{{ $photo->id }}">
-                <img src="{{ asset('storage/'.$photo->path) }}" class="w-full h-32 object-cover rounded"
-                     onclick="openPreview(this.src)">
+                @if($photo->isVideo())
+                    <video controls class="w-full h-32 object-cover rounded">
+                        <source src="{{ asset('storage/'.$photo->path) }}" type="video/mp4">
+                    </video>
+                @else
+                    <img src="{{ asset('storage/'.$photo->path) }}"
+                        class="w-full h-32 object-cover rounded"
+                        onclick="openPreview(this.src)">
+                @endif
                 <button type="button"
                         class="absolute top-1 right-1 bg-black/60 text-white text-xs px-2 py-1 rounded hidden group-hover:block"
                         onclick="deletePhoto({{ $photo->id }})">✕
@@ -165,13 +172,27 @@ document.addEventListener('DOMContentLoaded', function() {
             this.value = '';
             return;
         }
+        const allowedTypes = [
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/webp',
+            'video/mp4'
+        ];
+
         for (let f of files) {
-            if (!['image/jpeg','image/jpg','image/png','image/webp'].includes(f.type)) {
-                alert('Only JPG, PNG, WEBP allowed.');
+            if (!allowedTypes.includes(f.type)) {
+                alert('Only JPG, PNG, WEBP images or MP4 videos allowed.');
                 this.value = '';
                 return;
             }
-            if (f.size > 5*1024*1024) {
+            if (f.type === 'video/mp4' && f.size > 50 * 1024 * 1024) {
+                alert('Each video must be under 50MB.');
+                this.value = '';
+                return;
+            }
+
+            if (f.type.startsWith('image/') && f.size > 5 * 1024 * 1024) {
                 alert('Each image must be under 5MB.');
                 this.value = '';
                 return;
@@ -231,31 +252,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-const photosInput = document.getElementById('photosInput');
-    const photoError = document.getElementById('photos-error');
-    photosInput.addEventListener('change', function() {
-        const files = this.files;
-        const existingCount = document.querySelectorAll('#photo-grid [data-id]').length;
-        if (files.length + existingCount > 10) {
-            alert('You can upload up to 10 photos only.');
-            this.value = ''; // 清空选择
-        } else {
-            for (let f of files) {
-                if (!['image/jpeg','image/jpg','image/png','image/webp'].includes(f.type)) {
-                    alert('Only JPG, PNG, WEBP allowed.');
-                    this.value = '';
-                    break;
-                }
-                if (f.size > 5*1024*1024) {
-                    alert('Each image must be under 5MB.');
-                    this.value = '';
-                    break;
-                }
-            }
-        }
-    });
-    
 </script>
 
 {{-- 预览弹窗 --}}

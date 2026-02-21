@@ -85,16 +85,16 @@ class WorkerController extends Controller
             $maxSort = $profile->photos()->max('sort') ?? 0;
 
             foreach ($request->file('photos') as $index => $photo) {
+
+                $mime = $photo->getMimeType();
+                $type = str_starts_with($mime, 'video/') ? 'video' : 'image';
+
                 $path = $photo->store('profile_photos', 'public');
 
-                // TaskPhoto::create([
-                //     'task_job_id' => $profile->id,  // 复用 task_job_id 存 profile id
-                //     'path' => $path,
-                //     'sort' => $maxSort + $index + 1,
-                // ]);
                 ProfilePhoto::create([
                     'profile_id' => $profile->id,
                     'path'       => $path,
+                    'type'       => $type, // image | video
                     'sort'       => $maxSort + $index + 1,
                 ]);
             }
@@ -103,33 +103,7 @@ class WorkerController extends Controller
         return back()->with('success', 'Profile updated successfully.');
     }
 
-    // // 删除单张图片
-    // public function destroyPhoto(TaskPhoto $photo)
-    // {
-    //     $profile = auth()->user()->profile;
-    //     if($photo->task_job_id != $profile->id) abort(403);
-
-    //     Storage::disk('public')->delete($photo->path);
-    //     $photo->delete();
-
-    //     return response()->json(['success' => true]);
-    // }
-
-    // // 拖拽排序保存
-    // public function reorderPhotos(Request $request)
-    // {
-    //     $profile = auth()->user()->profile;
-    //     $order = $request->input('order', []);
-
-    //     foreach ($order as $item) {
-    //         $photo = TaskPhoto::find($item['id']);
-    //         if($photo && $photo->task_job_id == $profile->id) {
-    //             $photo->update(['sort' => $item['sort']]);
-    //         }
-    //     }
-
-    //     return response()->json(['success' => true]);
-    // }
+    
     // 删除单张图片
     public function destroyPhoto(ProfilePhoto $photo)
     {
