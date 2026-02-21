@@ -68,10 +68,13 @@
                     <div
                         id="map"
                         class="w-full rounded border"
-                        style="height: 320px;"
+                        style="height: 320px;"  
                     ></div>
                 </div>
-                <input id="distance_km" name="distance_km">
+                <div class="mt-4">
+                    <label class="block text-sm font-medium">Distance (km)</label>
+                    <input name="distance_km" id="distance_km">
+                </div>
                 <div class="mt-4">
                     <label class="block text-sm font-medium">Package Weight (kg)</label>
                     <input
