@@ -107,16 +107,26 @@ class WorkerController extends Controller
     // 删除单张图片
     public function destroyPhoto(ProfilePhoto $photo)
     {
-        $profile = auth()->user()->profile;
+        try {
+            $profile = auth()->user()->profile;
 
-        if ($photo->profile_id !== $profile->id) {
-            abort(403);
+            if ($photo->profile_id !== $profile->id) {
+                abort(403);
+            }
+
+            // 删除 storage 文件（image / video 都适用）
+            if ($photo->path && Storage::disk('public')->exists($photo->path)) {
+                Storage::disk('public')->delete($photo->path);
+            }
+            $photo->delete();
+
+            return response()->json(['success' => true]);
+         } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        Storage::disk('public')->delete($photo->path);
-        $photo->delete();
-
-        return response()->json(['success' => true]);
     }
 
     public function reorderPhotos(Request $request)
