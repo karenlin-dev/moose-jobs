@@ -25,22 +25,15 @@
 
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     @foreach($worker->profile->photos as $photo)
-                        <div class="border rounded-lg overflow-hidden bg-white">
-                            <img
-                                src="{{ asset('storage/'.$photo->path) }}"
-                                class="w-full h-32 object-cover"
-                                alt="photo"
-                            />
-
-                            <div class="p-2 flex justify-end">
-                                <form method="POST" action="{{ route('workers.photos.destroy', $photo->id) }}"
-                                    onsubmit="return confirm('Delete this photo?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="text-sm text-red-600 hover:underline">Delete</button>
-                                </form>
-                            </div>
-                        </div>
+                         @if($photo->isVideo())
+                            <video controls class="w-full h-32 object-cover rounded">
+                                <source src="{{ asset('storage/'.$photo->path) }}" type="video/mp4">
+                            </video>
+                        @else
+                            <img src="{{ asset('storage/'.$photo->path) }}"
+                                class="w-full h-32 object-cover rounded"
+                                onclick="openPreview(this.src)">
+                        @endif
                     @endforeach
                 </div>
             </div>

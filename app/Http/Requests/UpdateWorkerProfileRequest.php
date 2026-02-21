@@ -50,9 +50,10 @@ class UpdateWorkerProfileRequest extends FormRequest
             // photos
             'photos' => ['nullable', 'array', 'max:10'],
             'photos.*' => [
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:5120',
+                'required',
+                'file',
+                'mimetypes:image/jpeg,image/png,image/webp,video/mp4',
+                'max:51200', // 50MB（单位 KB）
             ],
         ];
     }
