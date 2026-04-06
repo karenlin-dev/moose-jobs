@@ -224,33 +224,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 删除图片
     window.deletePhoto = function(id) {
-        if(!confirm('Are you sure to delete this photo?')) return;
+    if(!confirm('Are you sure to delete this photo?')) return;
 
-        // 使用 Laravel route helper 动态生成 URL
-        const url = `{{ route('workers.photos.destroy', ['photo' => '__id__']) }}`.replace('__id__', id);
+    // 动态生成 URL
+    const url = `{{ route('workers.photos.destroy', ['photo' => 'PHOTO_ID']) }}`.replace('PHOTO_ID', id);
 
-        fetch(url, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.success){
-                document.querySelector(`[data-id='${id}']`).remove();
-            } else {
-                alert('Delete failed.');
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            alert('Delete failed.');
-        });
-    }
+    fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({}) // Laravel DELETE 方法有时需要空 body
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            const el = document.querySelector(`[data-id='${id}']`);
+            if(el) el.remove();
+        } else {
+            alert(data.message || 'Delete failed.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Delete failed.');
+    });
+}
 });
 </script>
 
