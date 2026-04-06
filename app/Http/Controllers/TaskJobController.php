@@ -22,7 +22,7 @@ class TaskJobController extends Controller
         // 获取所有分类，用于 Blade 的选项卡
         $categories = \App\Models\Category::orderBy('name')->get();
 
-        $tasks = TaskJob::select('id', 'title', 'description', 'user_id', 'status', 'budget')
+        $tasks = TaskJob::select('id', 'title', 'description', 'user_id', 'status', 'budget','dropoff_address')
             ->with(['user', 'category', 'bids']) // 加 bids 方便快速接受按钮显示
             ->where('status', JobStatus::OPEN)
             ->when($slug, function($query) use ($slug) {
