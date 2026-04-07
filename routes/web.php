@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use APP\Models\Category;
 use App\Http\Controllers\ProfilePhotoController;
+use App\Http\Controllers\SocialAuthController;
 
 
 // Route::get('/', function () {
@@ -172,5 +173,24 @@ Route::middleware('auth')->group(function () {
 });
 Route::delete('/profile/photos/{photo}', [ProfilePhotoController::class, 'destroy'])
     ->name('profile.photos.destroy');
-    
+
+
+// OAuth 登录
+Route::get('/login/{provider}', [SocialAuthController::class, 'redirect'])
+    ->name('social.redirect');
+
+Route::get('/login/{provider}/callback', [SocialAuthController::class, 'callback'])
+    ->name('social.callback');
+
+// 获取登录状态，用于前端弹窗刷新
+Route::get('login/status', function() {
+    if(auth()->check()){
+        return response()->json([
+            'logged_in' => true,
+            'user_name' => auth()->user()->name
+        ]);
+    }
+    return response()->json(['logged_in' => false, 'error' => session('error')]);
+});
+
 require __DIR__.'/auth.php';
