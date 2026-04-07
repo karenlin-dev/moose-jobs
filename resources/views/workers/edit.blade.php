@@ -224,35 +224,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // 删除图片函数
     window.deletePhoto = function(id) {
-    if(!confirm('Are you sure to delete this photo?')) return;
+        if (!confirm('Are you sure to delete this photo?')) return;
 
-    // 动态生成 URL
-    const url = `{{ route('workers.photos.destroy', ['photo' => 'PHOTO_ID']) }}`.replace('PHOTO_ID', id);
+        // 动态生成 URL
+        const url = `{{ route('profile.photos.destroy', ['photo' => 'PHOTO_ID']) }}`.replace('PHOTO_ID', id);
 
-    fetch(url, {
-        method: 'DELETE',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({}) // Laravel DELETE 方法有时需要空 body
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.success){
-            const el = document.querySelector(`[data-id='${id}']`);
-            if(el) el.remove();
-        } else {
-            alert(data.message || 'Delete failed.');
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        alert('Delete failed.');
-    });
-}
+        fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({}) // DELETE 方法有时需要空 body
+        })
+        .then(async res => {
+            let data;
+            try {
+                data = await res.json();
+            } catch(e) {
+                throw new Error(`Invalid JSON response, status: ${res.status}`);
+            }
+
+            if (res.ok && data.success) {
+                const el = document.querySelector(`[data-id='${id}']`);
+                if (el) el.remove();
+            } else {
+                alert(data.message || `Delete failed, status: ${res.status}`);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert(err.message || 'Delete failed.');
+        });
+    };
 });
 </script>
 
