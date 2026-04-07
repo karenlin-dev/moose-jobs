@@ -64,4 +64,23 @@
             </x-primary-button>
         </div>
     </form>
+    <!-- 分隔线 -->
+    <div class="mt-6 text-center text-gray-500">
+        {{ __('Or login with') }}
+    </div>
+
+    <!-- 第三方登录按钮 -->
+    <div class="flex justify-center mt-4 gap-4">
+        <!-- Google -->
+        <a href="{{ route('social.redirect', 'google') }}"
+           class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+            {{ __('Google') }}
+        </a>
+
+        <!-- Facebook -->
+        <a href="{{ route('social.redirect', 'facebook') }}"
+           class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            {{ __('Facebook') }}
+        </a>
+    </div>
 </x-guest-layout>
