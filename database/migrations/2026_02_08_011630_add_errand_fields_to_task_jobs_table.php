@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('task_jobs', function (Blueprint $table) {
-            $table->enum('delivery_status', ['pending', 'in_transit', 'delivered'])
-                  ->default('pending')
-                  ->after('dropoff_address');
+            if (!Schema::hasColumn('task_jobs', 'delivery_status')) {
+                $table->string('delivery_status')->default('pending');
+            }
         });
     }
 
