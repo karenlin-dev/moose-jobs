@@ -14,7 +14,7 @@
                 @endif
             @endauth
             <a href="{{ route('tasks.errands') }}" class="px-4 py-2 bg-indigo-600 text-white rounded">
-                    查看跑腿任务
+                    Errand Tasks
                 </a>
 
         </div>

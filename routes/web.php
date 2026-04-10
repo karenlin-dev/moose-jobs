@@ -13,6 +13,7 @@ use App\Models\User;
 use APP\Models\Category;
 use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\ContactController;
 
 
 // Route::get('/', function () {
@@ -192,5 +193,7 @@ Route::get('login/status', function() {
     }
     return response()->json(['logged_in' => false, 'error' => session('error')]);
 });
+
+Route::post('/contact', [ContactController::class, 'send']);
 
 require __DIR__.'/auth.php';

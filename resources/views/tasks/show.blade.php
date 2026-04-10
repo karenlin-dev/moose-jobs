@@ -53,52 +53,73 @@
 
         </div>
 
-        {{-- Delivery Status --}}
-        @if($task->pickup_address || $task->dropoff_address)
+       {{-- Delivery Tracking (only for delivery tasks) --}}
+        @php
+            $isDelivery = $task->type === 'delivery'
+                || $task->category === 'delivery'
+                || $task->pickup_address
+                || $task->dropoff_address;
+        @endphp
+
+        @if($isDelivery)
+
             @php
                 $statusOrder = ['pending', 'in_transit', 'delivered'];
+
                 $labels = [
-                    'pending' => 'Waiting for Pickup',
-                    'in_transit' => 'In Transit',
+                    'pending' => 'Waiting Pickup',
+                    'in_transit' => 'On the Way',
                     'delivered' => 'Delivered',
                 ];
+
                 $currentIndex = array_search($task->delivery_status ?? 'pending', $statusOrder);
             @endphp
 
-            <div class="mt-6">
-                <h3 class="font-semibold mb-4">Delivery Status</h3>
+            <!-- 📦 Status Card -->
+            <div class="mt-6 bg-white border rounded-2xl p-5 shadow-sm">
 
-                <div class="flex items-center">
+                <h3 class="font-semibold text-gray-800 mb-4">
+                    🚚 Delivery Status
+                </h3>
+
+                <!-- Progress Bar -->
+                <div class="flex items-center justify-between relative">
+
                     @foreach($statusOrder as $index => $key)
-                        {{-- Step --}}
-                        <div class="flex items-center">
-                            {{-- 圆点 --}}
+
+                        <div class="flex flex-col items-center z-10">
+
+                            <!-- Circle -->
                             <div
-                                class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                                transition-all
                                 {{ $index < $currentIndex ? 'bg-green-500 text-white' : '' }}
-                                {{ $index === $currentIndex && $key !== 'pending' ? 'bg-blue-500 text-white' : '' }}
-                                {{ $index > $currentIndex || ($key === 'pending' && $currentIndex === 0) ? 'bg-gray-300 text-gray-600' : '' }}"
+                                {{ $index === $currentIndex ? 'bg-blue-500 text-white scale-110 shadow-md' : '' }}
+                                {{ $index > $currentIndex ? 'bg-gray-200 text-gray-500' : '' }}"
                             >
-                                {{ $index + 1 }}
+                                @if($index < $currentIndex)
+                                    ✓
+                                @else
+                                    {{ $index + 1 }}
+                                @endif
                             </div>
 
-                            {{-- 连接线 --}}
-                            @if(!$loop->last)
-                                <div class="w-16 h-1
-                                    {{ $index < $currentIndex ? 'bg-green-500' : 'bg-gray-300' }}">
-                                </div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
+                            <!-- Label -->
+                            <div class="text-xs mt-2 text-center
+                                {{ $index <= $currentIndex ? 'text-gray-800 font-medium' : 'text-gray-400' }}">
+                                {{ $labels[$key] }}
+                            </div>
 
-                {{-- 状态文字 --}}
-                <div class="flex justify-between text-xs text-gray-600 mt-2">
-                    @foreach($statusOrder as $key)
-                        <span>{{ $labels[$key] }}</span>
+                        </div>
+
                     @endforeach
+
+                    <!-- Line Background -->
+                    <div class="absolute top-5 left-0 right-0 h-1 bg-gray-200 -z-0"></div>
+
                 </div>
             </div>
+
         @endif
         @if($task->pickup_address && $task->dropoff_address)
             <div class="mt-6 space-y-4">
@@ -121,9 +142,6 @@
                 Distance: {{ $task->distance_km }} km
             </p>
         @endif
-        <pre class="text-xs text-gray-500">
-        {{ json_encode($task->only(['distance_km','weight_kg','size_level']), JSON_PRETTY_PRINT) }}
-        </pre>
     
         @if($task->weight_kg || $task->size_level)
             <div class="text-sm text-gray-600 mt-2">
