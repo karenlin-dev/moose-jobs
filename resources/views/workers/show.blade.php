@@ -40,6 +40,23 @@
         @endif
 
     </div>
+    <!-- Image Preview Modal -->
+    <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+        <span class="absolute top-5 right-5 text-white text-3xl cursor-pointer" onclick="closePreview()">×</span>
+
+        <img id="modalImg" class="max-w-[90%] max-h-[90%] rounded shadow-lg">
+    </div>
+
+    <script>
+    function openPreview(src) {
+        document.getElementById('imageModal').classList.remove('hidden');
+        document.getElementById('modalImg').src = src;
+    }
+
+    function closePreview() {
+        document.getElementById('imageModal').classList.add('hidden');
+    }
+    </script>
 </x-app-layout>
 
 
