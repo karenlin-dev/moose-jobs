@@ -39,7 +39,7 @@ Route::get('/', function () {
 
     $workers = User::with(['profile.categories'])
         ->where('role', 'worker')
-        ->latest()
+        ->orderBy('created_at', 'asc') 
         ->take(12)
         ->get();
 
