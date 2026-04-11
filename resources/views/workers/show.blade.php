@@ -38,9 +38,9 @@
                 </div>
             </div>
         @endif
-
+<!-- Image Preview Modal -->
     </div>
-    <!-- Image Preview Modal -->
+
     <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
         <span class="absolute top-5 right-5 text-white text-3xl cursor-pointer" onclick="closePreview()">×</span>
 
