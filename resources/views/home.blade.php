@@ -54,8 +54,8 @@
         </h1>
 
         <p class="mt-5 text-gray-600 text-lg">
-            From moving and cleaning to web development and errands —
-            find trusted local help or start earning today.
+            Find trusted local help or start earning today, -
+            such as developers, handymen, HVAC technicians, and delivery runners.
         </p>
 
         <div class="mt-6 flex flex-wrap gap-3">
