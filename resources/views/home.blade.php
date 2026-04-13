@@ -76,51 +76,115 @@
     </div>
 
     <div 
-        x-data="{
-            images: [
-                '{{ asset('images/web.jpg') }}',
-                '{{ asset('images/heating.jpg') }}',
-                '{{ asset('images/handyman.jpg') }}',
-                '{{ asset('images/delivery.jpg') }}'
-            ],
-            current: 0,
-            start() {
-                setInterval(() => {
-                    this.current = (this.current + 1) % this.images.length
-                }, 3000)
-            }
-        }"
-        x-init="start()"
-        class="relative"
-    >
+    x-data="{
+    current: 0,
+    total: {{ $announcements->count() }},
+    ids: @json($announcements->pluck('id')),
+    activeId: null,
+    timer: null,
 
-        <!-- 图片 -->
-        <template x-for="(img, index) in images" :key="index">
+    start() {
+        if (this.total <= 1) return;
+
+        this.syncId();
+
+        this.timer = setInterval(() => {
+            this.next()
+        }, 3000)
+    },
+
+    stop() {
+        clearInterval(this.timer)
+    },
+
+    next() {
+        this.current = (this.current + 1) % this.total
+        this.syncId()
+    },
+
+    prev() {
+        this.current = (this.current - 1 + this.total) % this.total
+        this.syncId()
+    },
+
+    syncId() {
+        this.activeId = this.ids[this.current]
+    }
+}"  
+    x-init="start()"
+    @mouseenter="stop()"
+    @mouseleave="start()"
+    class="relative w-full h-[320px] overflow-hidden rounded-2xl shadow-lg"
+>
+
+    <!-- 图片轮播 -->
+    @foreach($announcements as $index => $a)
+        <a :href="'/announcements/' + activeId"
+            class="absolute inset-0">
+
             <img 
-                :src="img"
-                x-show="current === index"
+                src="{{ asset('storage/' . $a->image) }}"
+                x-show="current === {{ $index }}"
                 x-transition:enter="transition ease-out duration-700"
                 x-transition:enter-start="opacity-0 scale-105"
                 x-transition:enter-end="opacity-100 scale-100"
-                class="rounded-2xl shadow-lg object-cover w-full h-[320px] absolute inset-0"
+                class="w-full h-full object-cover cursor-pointer"
             >
-        </template>
+        </a>
+    @endforeach
+         <!-- 🟢 左下角浮动卡片（新增的就在这里👇） -->
+    <div class="absolute bottom-4 left-4">
 
-        <!-- 占位高度（防止塌陷） -->
-        <div class="h-[320px]"></div>
+        @foreach($announcements as $index => $a)
+            <div
+                x-show="current === {{ $index }}"
+                x-transition
+                class="bg-white/90 backdrop-blur p-3 rounded-xl shadow-lg w-[220px]"
+            >
 
-        <!-- 浮动卡片 -->
-        <div class="absolute bottom-4 left-4 bg-white p-4 rounded-xl shadow-lg text-sm">
-            <div x-text="[
-                '💻 Web Development',
-                '🔥 Heating Service',
-                '🔧 Handyman Help',
-                '📦 Delivery Service'
-            ][current]"></div>
-            <div class="text-gray-500 text-xs mt-1">Moose Jaw</div>
-        </div>
+                <!-- 类型 -->
+                <div class="text-xs text-indigo-600 font-semibold">
+                    {{ $a->type }}
+                </div>
+
+                <!-- 标题 -->
+                <div class="text-sm font-medium text-gray-900 mt-1 line-clamp-2">
+                    {{ $a->title }}
+                </div>
+
+                <!-- 地点 -->
+                <div class="text-xs text-gray-500 mt-1">
+                    Moose Jaw
+                </div>
+
+            </div>
+        @endforeach
 
     </div>
+    <!-- 🟢 左下角浮动卡片结束 -->
+    <!-- ⬅ 左右按钮 -->
+    <button @click="prev"
+        class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white px-2 py-1 rounded-full shadow">
+        ◀
+    </button>
+
+    <button @click="next"
+        class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white px-2 py-1 rounded-full shadow">
+        ▶
+    </button>
+
+    <!-- ⏺ 小圆点 -->
+    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+        @foreach($announcements as $index => $a)
+            <div 
+                @click="current = {{ $index }}"
+                :class="current === {{ $index }} ? 'bg-white' : 'bg-white/50'"
+                class="w-2.5 h-2.5 rounded-full cursor-pointer transition">
+            </div>
+        @endforeach
+    </div>
+
+</div>
 
 </section>
 
