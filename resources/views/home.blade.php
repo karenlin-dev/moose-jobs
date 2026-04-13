@@ -117,29 +117,25 @@
     class="relative w-full h-[320px] overflow-hidden rounded-2xl shadow-lg"
 >
 
-    <!-- 图片轮播 -->
-    @foreach($announcements as $index => $a)
-        <a :href="'/announcements/' + activeId"
-            class="absolute inset-0">
+    @foreach($announcements as $a)
+        <a href="{{ route('admin.announcements.show', $a->id) }}"
+        x-show="current === {{ $loop->index }}"
+        class="absolute inset-0">
 
             <img 
                 src="{{ asset('storage/' . $a->image) }}"
-                x-show="current === {{ $index }}"
-                x-transition:enter="transition ease-out duration-700"
-                x-transition:enter-start="opacity-0 scale-105"
-                x-transition:enter-end="opacity-100 scale-100"
                 class="w-full h-full object-cover cursor-pointer"
             >
         </a>
     @endforeach
          <!-- 🟢 左下角浮动卡片（新增的就在这里👇） -->
-    <div class="absolute bottom-4 left-4">
+    <div class="absolute bottom-4 left-4 z-20">
 
         @foreach($announcements as $index => $a)
             <div
                 x-show="current === {{ $index }}"
                 x-transition
-                class="bg-white/90 backdrop-blur p-3 rounded-xl shadow-lg w-[220px]"
+                class="bg-white bg-opacity-90 backdrop-blur p-3 rounded-xl shadow-lg w-[220px]"
             >
 
                 <!-- 类型 -->
