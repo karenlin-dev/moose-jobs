@@ -14,7 +14,10 @@ use APP\Models\Category;
 use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\Admin\AnnouncementController;
+use App\Http\Controllers\HomeController;
 
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Route::get('/', function () {
 
@@ -35,18 +38,18 @@ use App\Http\Controllers\ContactController;
 
 //     return view('home', compact('workers'));
 // })->name('home');
-Route::get('/', function () {
+// Route::get('/', function () {
 
-    $workers = User::with(['profile.categories'])
-        ->where('role', 'worker')
-        ->orderBy('created_at', 'asc') 
-        ->take(12)
-        ->get();
+//     $workers = User::with(['profile.categories'])
+//         ->where('role', 'worker')
+//         ->orderBy('created_at', 'asc') 
+//         ->take(12)
+//         ->get();
 
-    $categories = Category::orderBy('name')->get();
+//     $categories = Category::orderBy('name')->get();
 
-    return view('home', compact('workers', 'categories'));
-})->name('home');
+//     return view('home', compact('workers', 'categories'));
+// })->name('home');
 
 /**
  * Public: Worker list
@@ -196,4 +199,18 @@ Route::get('login/status', function() {
 
 Route::post('/contact', [ContactController::class, 'send']);
 
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')   // ⭐ URL必须加这个
+    ->as('admin.')      // ⭐ route name
+    ->group(function () {
+
+        Route::get('/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('dashboard');
+
+        Route::resource('announcements', AnnouncementController::class);
+
+    });
+
+Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show']);
 require __DIR__.'/auth.php';
