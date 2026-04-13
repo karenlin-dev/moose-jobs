@@ -13,8 +13,17 @@
         <div class="font-bold text-lg mb-6">🦌 MooseJobs</div>
 
         <nav class="space-y-2 text-sm">
-            <a href="/admin/dashboard" class="block p-2 hover:bg-gray-100 rounded">Dashboard</a>
-            <a href="/admin/announcements" class="block p-2 hover:bg-gray-100 rounded">Announcements</a>
+
+            <a href="{{ route('admin.dashboard') }}"
+            class="block p-2 hover:bg-gray-100 rounded">
+                Dashboard
+            </a>
+
+            <a href="{{ route('admin.announcements.index') }}"
+            class="block p-2 hover:bg-gray-100 rounded">
+                Announcements
+            </a>
+
         </nav>
     </aside>
 
