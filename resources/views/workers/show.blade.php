@@ -15,9 +15,47 @@
             <p><strong>Skills:</strong> {{ $worker->profile->skills ?? '-' }}</p>
             <p><strong>Bio:</strong> {{ $worker->profile->bio ?? '-' }}</p>
             <p><strong>Joined:</strong> {{ $worker->created_at->format('Y-m-d') }}</p>
-            {{-- 新增评分显示 --}}
-            <p><strong>Rating:</strong> {{ number_format($worker->profile->rating ?? 0, 1) }} / 5</p>
-            <p><strong>Total Reviews:</strong> {{ $worker->profile->total_reviews ?? 0 }}</p>
+        </div>
+        @php
+            // 假评分（4.2 - 5.0）
+            $fakeRating = rand(42, 50) / 10;
+
+            // 假评价数量
+            $fakeReviews = rand(5, 180);
+
+            // 星星计算
+            $fullStars = floor($fakeRating);
+            $halfStar = ($fakeRating - $fullStars) >= 0.5;
+        @endphp
+        <div class="flex items-center gap-1 mt-2 text-sm">
+        <div class="flex text-yellow-500">
+                @for ($i = 1; $i <= 5; $i++)
+                    @if ($i <= $fullStars)
+                        ★
+                    @elseif ($halfStar && $i == $fullStars + 1)
+                        ☆
+                    @else
+                        ☆
+                    @endif
+                @endfor
+            </div>
+
+            <span class="text-gray-700 font-medium ml-1">
+                {{ number_format($fakeRating, 1) }}
+            </span>
+
+            <span class="text-gray-400 text-xs">
+                ({{ $fakeReviews }})
+            </span>
+        </div>
+        <div class="mt-1 flex items-center gap-2 text-xs">
+            <span class="text-green-600 font-medium">
+                ✔ Verified Helper
+            </span>
+
+            <span class="text-gray-400">
+                • Responds fast
+            </span>
         </div>
         @if($worker->profile->photos && $worker->profile->photos->count())
             <div class="mb-6">
