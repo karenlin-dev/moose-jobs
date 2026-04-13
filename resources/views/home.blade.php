@@ -260,8 +260,32 @@
                         Usually responds within 1 hour
                     </p>
                         <!-- 📝 简介 -->
-                        <div class="mt-3 p-3 bg-gray-50 rounded-xl text-sm text-gray-700 whitespace-pre-line leading-relaxed">
-                            {{ $profile?->bio ?: 'Experienced local helper. Fast response and fair pricing.' }}
+                        <div x-data="{ expanded: false }" class="mt-3">
+
+                            <div class="p-3 bg-gray-50 rounded-xl text-sm text-gray-700 leading-snug transition-all duration-300 hover:shadow-md">
+
+                                <!-- bio 内容 -->
+                                <div
+                                    :class="expanded ? '' : 'max-h-20 overflow-hidden'"
+                                    class="whitespace-pre-line transition-all duration-300 "
+                                >
+                                    {{ $profile?->bio ?: 'Experienced local helper. Fast response and fair pricing.' }}
+                                </div>
+
+                                <!-- 渐隐效果（未展开时） -->
+                                <div x-show="!expanded" class="h-5 -mt-5 bg-gradient-to-t from-gray-50 to-transparent"></div>
+
+                                <!-- 按钮 -->
+                                <button
+                                    @click="expanded = !expanded"
+                                    class="mt-1 text-xs font-medium text-indigo-600 hover:underline"
+                                >
+                                    <span x-show="!expanded">Read more</span>
+                                    <span x-show="expanded">Show less</span>
+                                </button>
+
+                            </div>
+
                         </div>
 
                         <!-- 🏷️ 技能标签 -->
@@ -280,35 +304,35 @@
                             </div>
                         @endif
                         <div class="flex items-center gap-1 mt-2 text-sm">
-    <div class="flex text-yellow-500">
-        @for ($i = 1; $i <= 5; $i++)
-            @if ($i <= $fullStars)
-                ★
-            @elseif ($halfStar && $i == $fullStars + 1)
-                ☆
-            @else
-                ☆
-            @endif
-        @endfor
-    </div>
+                            <div class="flex text-yellow-500">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    @if ($i <= $fullStars)
+                                        ★
+                                    @elseif ($halfStar && $i == $fullStars + 1)
+                                        ☆
+                                    @else
+                                        ☆
+                                    @endif
+                                @endfor
+                            </div>
 
-    <span class="text-gray-700 font-medium ml-1">
-        {{ number_format($fakeRating, 1) }}
-    </span>
+                            <span class="text-gray-700 font-medium ml-1">
+                                {{ number_format($fakeRating, 1) }}
+                            </span>
 
-    <span class="text-gray-400 text-xs">
-        ({{ $fakeReviews }})
-    </span>
-</div>
-<div class="mt-1 flex items-center gap-2 text-xs">
-    <span class="text-green-600 font-medium">
-        ✔ Verified Helper
-    </span>
+                            <span class="text-gray-400 text-xs">
+                                ({{ $fakeReviews }})
+                            </span>
+                        </div>
+                        <div class="mt-1 flex items-center gap-2 text-xs">
+                            <span class="text-green-600 font-medium">
+                                ✔ Verified Helper
+                            </span>
 
-    <span class="text-gray-400">
-        • Responds fast
-    </span>
-</div>
+                            <span class="text-gray-400">
+                                • Responds fast
+                            </span>
+                        </div>
                         <!-- 👉 操作 -->
                         <div class="mt-4 flex items-center justify-between">
                             <a href="{{ url('/workers/'.$p->id) }}"

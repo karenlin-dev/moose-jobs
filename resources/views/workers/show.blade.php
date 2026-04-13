@@ -13,7 +13,10 @@
             <p><strong>Email:</strong> {{ $worker->email }}</p>
             <p><strong>Phone:</strong> {{ $worker->profile->phone ?? '-' }}</p>
             <p><strong>Skills:</strong> {{ $worker->profile->skills ?? '-' }}</p>
-            <p><strong>Bio:</strong> {{ $worker->profile->bio ?? '-' }}</p>
+            <p><strong>Bio:</strong>
+        <div class="mt-3 p-3 bg-gray-50 rounded-xl text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                {{ $worker->profile->bio ?? '-' }}
+        </div>
             <p><strong>Joined:</strong> {{ $worker->created_at->format('Y-m-d') }}</p>
         </div>
         @php
