@@ -189,9 +189,19 @@
                         $avatar = $avatarPath
                             ? asset('storage/' . $avatarPath)
                             : asset('images/man.jpg');
+                          
+                        // 假评分（4.2 - 5.0）
+                        $fakeRating = rand(42, 50) / 10;
+
+                        // 假评价数量
+                        $fakeReviews = rand(5, 180);
+
+                        // 星星计算
+                        $fullStars = floor($fakeRating);
+                        $halfStar = ($fakeRating - $fullStars) >= 0.5;
                     @endphp
 
-                    <div class="bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition"
+                    <div class="bg-white border rounded-2xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300""
                         x-show="selected==='all' || @js($catIds).includes(parseInt(selected))"
                         x-transition>
 
@@ -250,7 +260,7 @@
                         Usually responds within 1 hour
                     </p>
                         <!-- 📝 简介 -->
-                        <div class="mt-3 text-sm text-gray-700">
+                        <div class="mt-3 p-3 bg-gray-50 rounded-xl text-sm text-gray-700 whitespace-pre-line leading-relaxed">
                             {{ $profile?->bio ?: 'Experienced local helper. Fast response and fair pricing.' }}
                         </div>
 
@@ -269,7 +279,36 @@
                                 @endforeach
                             </div>
                         @endif
+                        <div class="flex items-center gap-1 mt-2 text-sm">
+    <div class="flex text-yellow-500">
+        @for ($i = 1; $i <= 5; $i++)
+            @if ($i <= $fullStars)
+                ★
+            @elseif ($halfStar && $i == $fullStars + 1)
+                ☆
+            @else
+                ☆
+            @endif
+        @endfor
+    </div>
 
+    <span class="text-gray-700 font-medium ml-1">
+        {{ number_format($fakeRating, 1) }}
+    </span>
+
+    <span class="text-gray-400 text-xs">
+        ({{ $fakeReviews }})
+    </span>
+</div>
+<div class="mt-1 flex items-center gap-2 text-xs">
+    <span class="text-green-600 font-medium">
+        ✔ Verified Helper
+    </span>
+
+    <span class="text-gray-400">
+        • Responds fast
+    </span>
+</div>
                         <!-- 👉 操作 -->
                         <div class="mt-4 flex items-center justify-between">
                             <a href="{{ url('/workers/'.$p->id) }}"
@@ -330,10 +369,10 @@
     <form method="POST" action="/contact" class="space-y-4">
         @csrf
 
-        <input type="text" name="name" placeholder="Name"
+        <input type="text" name="name" placeholder="Your Name"
             class="w-full border p-2 rounded" required>
 
-        <input type="email" name="email" placeholder="Email"
+        <input type="email" name="email" placeholder="Your Email"
             class="w-full border p-2 rounded" required>
 
         <textarea name="message" placeholder="Message"
