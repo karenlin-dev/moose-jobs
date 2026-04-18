@@ -107,7 +107,7 @@
 
                             <li class="py-2 flex justify-between items-center {{ $isAccepted ? 'bg-green-100 rounded p-2' : '' }}">
                                 <div>
-                                    @if($bid->worker)
+                                    @if($bid->worker->exists)
                                         <span class="font-medium">
                                             {{ $bid->worker?->name }}
                                         </span>
