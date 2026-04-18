@@ -121,6 +121,9 @@ class WorkerController extends Controller
 
         $data = $request->validated();
 
+        if ($request->filled('facebook_url')) {
+            $data['facebook_url'] = $request->facebook_url;
+        }
         // ✅ 防止 403（服务器 WAF 拦截）
         if (isset($data['bio'])) {
             $data['bio'] = strip_tags($data['bio']);

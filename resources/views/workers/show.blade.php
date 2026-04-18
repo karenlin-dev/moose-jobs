@@ -17,6 +17,14 @@
        <div class="mt-3 p-4 bg-white border rounded-xl text-sm text-gray-700 leading-relaxed whitespace-pre-line break-words shadow-sm">
             {{ $worker->profile->bio ?? 'No bio added yet.' }}
         </div>
+        @if($worker->profile->facebook_url)
+            <div class="mb-4">
+            <a href="{{ $worker->profile->facebook_url }}" target="_blank"
+            class="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+                📘 Facebook
+            </a>
+            </div>
+        @endif
             <p><strong>Joined:</strong> {{ $worker->created_at->format('Y-m-d') }}</p>
         </div>
         @php
