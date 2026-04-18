@@ -107,7 +107,15 @@
 
                             <li class="py-2 flex justify-between items-center {{ $isAccepted ? 'bg-green-100 rounded p-2' : '' }}">
                                 <div>
-                                    <span class="font-medium">{{ $bid->worker->name }}</span> -
+                                    @if($bid->worker)
+                                        <span class="font-medium">
+                                            {{ $bid->worker->name }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400 italic">
+                                            Worker not available
+                                        </span>
+                                    @endif
                                     ${{ $bid->price }}
                                     <span class="text-gray-400 text-sm">({{ $bid->status }})</span>
                                 </div>

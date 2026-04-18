@@ -24,6 +24,11 @@
                 Announcements
             </a>
 
+             <a href="{{ route('admin.categories.index') }}"
+            class="block p-2 hover:bg-gray-100 rounded">
+                Categories
+            </a>
+
         </nav>
     </aside>
 

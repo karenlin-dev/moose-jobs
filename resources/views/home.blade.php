@@ -184,24 +184,6 @@
 
 </section>
 
-    <!-- 🧩 CATEGORIES -->
-   <section class="mt-14">
-        <h2 class="text-xl font-semibold">Popular Services</h2>
-
-        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div class="p-4 rounded-xl bg-pink-50 text-pink-700 text-center">💻 Web Dev</div>
-            <div class="p-4 rounded-xl bg-red-50 text-red-700 text-center">🔥 Heating</div>
-            <div class="p-4 rounded-xl bg-yellow-50 text-yellow-700 text-center">🔨 Home Renovation</div>
-             <div class="p-4 rounded-xl bg-purple-50 text-purple-700 text-center">🔨 Ceiling Maintenance</div>
-            <div class="p-4 rounded-xl bg-gray-100 text-gray-700 text-center">🛒 Errands</div>   
-            <div class="p-4 rounded-xl bg-blue-50 text-blue-700 text-center">🚚 Moving</div>
-            <div class="p-4 rounded-xl bg-green-50 text-green-700 text-center">🧹 Cleaning</div>
-            <div class="p-4 rounded-xl bg-teal-50 text-teal-700 text-center">🌿 Yard Work</div>
-            
-
-        </div>
-    </section>
-
     <!-- 👇 你原来的 worker 区（稍微优化标题） -->
     <section class="mt-14">
         <div class="flex items-end justify-between gap-4">
@@ -211,7 +193,6 @@
                     Trusted people in your community.
                 </p>
             </div>
-            <a href="{{ url('/workers') }}" class="text-sm hover:underline">View all</a>
         </div>
 
         <div x-data="{ selected: 'all' }">
@@ -219,21 +200,43 @@
             <!-- 分类 -->
             <div class="bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition">
                 <div class="text-sm font-semibold">Filter by Category</div>
-
                 <div class="mt-4 flex flex-wrap gap-2 text-sm">
-                    <button @click="selected='all'"
-                        class="px-4 py-2 rounded-xl border"
-                        :class="selected==='all' ? 'bg-black text-white' : 'bg-gray-50'">
-                        All
-                    </button>
-
-                    @foreach($categories as $cat)
-                        <button @click="selected='{{ $cat->id }}'"
+                        <button @click="selected='all'"
                             class="px-4 py-2 rounded-xl border"
-                            :class="selected==='{{ $cat->id }}' ? 'bg-black text-white' : 'bg-gray-50'">
-                            {{ $cat->name }}
+                            :class="selected==='all' ? 'bg-black text-white' : 'bg-gray-50'">
+                            All
                         </button>
-                    @endforeach
+                    @foreach($categories as $cat)
+                    <button
+                    @click="selected={{ $cat->id }}"
+                    class="px-4 py-2 rounded-xl border flex items-center gap-2 transition"
+
+                    :class="selected == {{ $cat->id }}
+                        ? 'bg-black text-white'
+                        : '{{ $cat->color_classes['bg'] }} {{ $cat->color_classes['text'] }}'">
+
+                        {{-- 🎯 icon --}}
+                        @if($cat->icon)
+                             {{-- icon（emoji） --}}
+                            <span class="text-xs">
+                                {{ $cat->icon_emoji }}
+                            </span>
+                        @else
+                            <span class="text-xs">📦</span>
+                        @endif
+
+                        {{-- 🎨 color dot --}}
+                         <span class="w-2 h-2 rounded-full {{ $cat->color_classes['dot'] }}"></span>
+
+
+                        {{-- 🏷️ name --}}
+                        <span class="truncate">
+                            {{ $cat->name }}
+                        </span>
+
+                    </button>
+                @endforeach
+
                 </div>
             </div>
 
@@ -347,22 +350,33 @@
                             </div>
 
                         </div>
-
+                        
                         <!-- 🏷️ 技能标签 -->
                         @php
                             $skillsRaw = $profile?->skills ?? '';
                             $skills = collect(array_filter(array_map('trim', explode(',', $skillsRaw))))->take(6);
                         @endphp
-
-                        @if($skills->isNotEmpty())
+                       @if($profile?->categories?->isNotEmpty())
                             <div class="mt-3 flex flex-wrap gap-2">
-                                @foreach($skills as $s)
-                                    <span class="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-600">
-                                        {{ $s }}
+                                @foreach($profile->categories as $cat)
+                                    <span class="px-2 py-1 rounded-full text-xs flex items-center gap-1
+                                        {{ $cat->color_classes['bg'] }}
+                                        {{ $cat->color_classes['text'] }}">
+
+                                         {{-- icon（emoji） --}}
+                                        <span class="text-xs">
+                                            {{ $cat->icon_emoji }}
+                                        </span>
+
+                                        {{-- dot --}}
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $cat->color_classes['dot'] }}"></span>
+
+                                        {{ $cat->name }}
                                     </span>
                                 @endforeach
                             </div>
                         @endif
+                    
                         <div class="flex items-center gap-1 mt-2 text-sm">
                             <div class="flex text-yellow-500">
                                 @for ($i = 1; $i <= 5; $i++)

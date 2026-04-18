@@ -16,40 +16,9 @@ use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CategoryController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-
-// Route::get('/', function () {
-
-//     $workers = DB::table('users')
-//         ->leftJoin('profiles', 'profiles.user_id', '=', 'users.id')
-//         ->select(
-//             'users.id',
-//             'users.name',
-//             'users.role',
-//             'profiles.avatar',
-//             'profiles.city',
-//             'profiles.bio'
-//         )
-//         ->where('users.role', 'worker')
-//         ->orderByDesc('users.id')
-//         ->limit(12)
-//         ->get();
-
-//     return view('home', compact('workers'));
-// })->name('home');
-// Route::get('/', function () {
-
-//     $workers = User::with(['profile.categories'])
-//         ->where('role', 'worker')
-//         ->orderBy('created_at', 'asc') 
-//         ->take(12)
-//         ->get();
-
-//     $categories = Category::orderBy('name')->get();
-
-//     return view('home', compact('workers', 'categories'));
-// })->name('home');
 
 /**
  * Public: Worker list
@@ -209,6 +178,7 @@ Route::middleware(['auth', 'admin'])
         })->name('dashboard');
 
         Route::resource('announcements', AnnouncementController::class);
+        Route::resource('categories', CategoryController::class);
 
     });
 
