@@ -23,9 +23,12 @@ class UpdateWorkerProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'city' => ['required', 'string', 'max:255'],
+            'city' => ['sometimes', 'string', 'max:255'],
 
-            'bio' => ['nullable', 'string', 'max:1000'],
+            'phone' => [
+                'sometimes',
+                'regex:/^\d{10}$/',
+            ],
 
             'avatar' => [
                 'nullable',
@@ -34,26 +37,11 @@ class UpdateWorkerProfileRequest extends FormRequest
                 'max:2048',
             ],
 
-            // Canada phone: 10 digits
-            'phone' => [
-                'required',
-                'regex:/^\d{10}$/',
-            ],
-
-            // skills 不信前端
-            'skills' => ['nullable'],
-
-            // categories
-            'category_ids' => ['required', 'array', 'min:1', 'max:10'],
-            'category_ids.*' => ['integer', 'exists:categories,id'],
-
-            // photos
             'photos' => ['nullable', 'array', 'max:10'],
             'photos.*' => [
-                'required',
                 'file',
                 'mimetypes:image/jpeg,image/png,image/webp,video/mp4',
-                'max:51200', // 50MB（单位 KB）
+                'max:51200',
             ],
         ];
     }
