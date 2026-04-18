@@ -121,8 +121,13 @@ class WorkerController extends Controller
 
         $data = $request->validated();
 
-        // ❗ 只保留基础字段（非 bio / skills / media）
-        unset($data['bio']);
+        // ✅ 防止 403（服务器 WAF 拦截）
+        if (isset($data['bio'])) {
+            $data['bio'] = strip_tags($data['bio']);
+            $data['bio'] = preg_replace("/\r\n|\r/", "\n", $data['bio']); // 标准化换行
+            $data['bio'] = preg_replace('/\n{3,}/', "\n\n", $data['bio']); // 限制换行
+            $data['bio'] = mb_substr($data['bio'], 0, 1000);
+        }
         
         // avatar
         if ($request->hasFile('avatar')) {

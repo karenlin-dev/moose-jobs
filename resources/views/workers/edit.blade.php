@@ -149,30 +149,6 @@
 
 {{-- JS --}}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script>
-    let timer;
-
-    document.querySelector('#bio').addEventListener('input', function () {
-
-        clearTimeout(timer);
-
-        timer = setTimeout(() => {
-
-            fetch('/worker/bio', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    bio: this.value
-                })
-            });
-
-        }, 800); // debounce
-    });    
-
-</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
