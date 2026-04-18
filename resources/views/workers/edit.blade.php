@@ -203,7 +203,7 @@
         fetch('/worker/media', {
             method: 'POST',
             headers: {
-                X-CSRF-TOKEN: document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             },
             body: formData
         });
@@ -220,7 +220,7 @@
         fetch('/worker/media', {
             method: 'POST',
             headers: {
-                X-CSRF-TOKEN: document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             },
             body: formData
         });

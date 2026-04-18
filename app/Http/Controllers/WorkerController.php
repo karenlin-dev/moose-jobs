@@ -124,6 +124,11 @@ class WorkerController extends Controller
         // ❗ 只保留基础字段（非 bio / skills / media）
         unset($data['bio']);
         unset($data['category_ids']);
+        
+        // avatar
+        if ($request->hasFile('avatar')) {
+            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
 
         $profile->update($data);
 
@@ -156,39 +161,17 @@ class WorkerController extends Controller
     public function updateMedia(Request $request)
     {
         $request->validate([
-            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            //'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'photos' => ['nullable', 'array', 'max:10'],
             'photos.*' => ['file', 'mimetypes:image/jpeg,image/png,image/webp,video/mp4', 'max:51200'],
         ]);
 
-        $user = auth()->user();
-        $profile = $user->profile;
+        $profile = auth()->user()->profile ?? auth()->user()->profile()->create([]);
 
-        $profile = $user->profile ?? $user->profile()->create([]);
-
-        $data = [];
-
+        
         /*
         |-------------------------
-        | Avatar upload
-        |-------------------------
-        */
-        if ($request->hasFile('avatar')) {
-
-            if ($profile->avatar && Storage::disk('public')->exists($profile->avatar)) {
-                Storage::disk('public')->delete($profile->avatar);
-            }
-
-            $profile->update([
-                'avatar' => $request->file('avatar')->store('avatars', 'public')
-            ]);
-        }
-
-        $profile->update($data);
-
-        /*
-        |-------------------------
-        | Photos upload
+        | Photos
         |-------------------------
         */
         if ($request->hasFile('photos')) {
@@ -204,9 +187,9 @@ class WorkerController extends Controller
 
                 ProfilePhoto::create([
                     'profile_id' => $profile->id,
-                    'path'       => $path,
-                    'type'       => $type,
-                    'sort'       => $maxSort + $index + 1,
+                    'path' => $path,
+                    'type' => $type,
+                    'sort' => $maxSort + $index + 1,
                 ]);
             }
         }
@@ -214,7 +197,7 @@ class WorkerController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Media updated successfully',
-            'avatar'  => $profile->fresh()->avatar,
+            'avatar' => $profile->avatar,
         ]);
     }
     // 删除单张图片
