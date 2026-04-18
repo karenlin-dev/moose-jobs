@@ -64,13 +64,9 @@ class WorkerController extends Controller
 
         // ✅ 防止 403（服务器 WAF 拦截）
         if (isset($data['bio'])) {
-            // 去掉 HTML 标签
             $data['bio'] = strip_tags($data['bio']);
-
-            // 去掉 URL（非常关键）
-            $data['bio'] = preg_replace('/https?:\/\/\S+/', '', $data['bio']);
-
-            // 限制长度（防止异常内容）
+            $data['bio'] = preg_replace("/\r\n|\r/", "\n", $data['bio']); // 标准化换行
+            $data['bio'] = preg_replace('/\n{3,}/', "\n\n", $data['bio']); // 限制换行
             $data['bio'] = mb_substr($data['bio'], 0, 500);
         }
 
