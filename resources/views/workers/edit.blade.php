@@ -90,9 +90,9 @@
         {{-- Bio --}}
         <div class="mb-4">
             <label class="block mb-1 font-medium">Bio</label>
-            <textarea name="bio"
-                      class="w-full border p-2 rounded"
-                      rows="4">{{ old('bio', $profile->bio ?? '') }}</textarea>
+            <textarea id="bio" name="bio"
+                class="w-full border p-2 rounded"
+                rows="4">{{ old('bio', $profile->bio ?? '') }}</textarea>
             @php
                 $bioErrors = collect($errors->get('bio'))->flatten()->all();
             @endphp
@@ -150,17 +150,107 @@
 {{-- JS --}}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
+    let timer;
+
+    document.querySelector('#bio').addEventListener('input', function () {
+
+        clearTimeout(timer);
+
+        timer = setTimeout(() => {
+
+            fetch('/worker/bio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    bio: this.value
+                })
+            });
+
+        }, 800); // debounce
+    });    
+
+    function saveSkillsToServer() {
+
+        const selectedIds = Array.from(
+            document.querySelectorAll('.category-checkbox:checked')
+        ).map(el => el.value);
+
+        fetch('/worker/skills', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                category_ids: selectedIds
+            })
+        });
+    }
+    function getSelectedSkills() {
+        return Array.from(document.querySelectorAll('.category-checkbox:checked'))
+            .map(el => el.value);
+    }
+
+    function uploadAvatar(file) {
+
+        let formData = new FormData();
+        formData.append('avatar', file);
+
+        fetch('/worker/media', {
+            method: 'POST',
+            headers: {
+                X-CSRF-TOKEN: document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: formData
+        });
+    }
+
+    function uploadPhotos(files) {
+
+        let formData = new FormData();
+
+        for (let file of files) {
+            formData.append('photos[]', file);
+        }
+
+        fetch('/worker/media', {
+            method: 'POST',
+            headers: {
+                X-CSRF-TOKEN: document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: formData
+        });
+    }
+
+    document.querySelector('input[name="avatar"]').addEventListener('change', function () {
+        uploadAvatar(this.files[0]);
+    });
+
+    document.querySelector('#photosInput').addEventListener('change', function () {
+        uploadPhotos(this.files);
+    });
+</script>
+
+<script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 动态生成 skills
+    // // 动态生成 skills
     const skillInput = document.getElementById('skills');
     const checkboxes = document.querySelectorAll('.category-checkbox');
-    function updateSkills() {
+    function updateSkillsUI() {
         let selected = [];
         checkboxes.forEach(cb => { if(cb.checked) selected.push(cb.nextElementSibling.textContent); });
         skillInput.value = selected.join(', ');
     }
-    checkboxes.forEach(cb => cb.addEventListener('change', updateSkills));
-    updateSkills();
+    // checkboxes.forEach(cb => cb.addEventListener('change', updateSkillsUI));
+    checkboxes.forEach(cb => cb.addEventListener('change', () => {
+        updateSkillsUI();
+        saveSkillsToServer();
+    }));
+    updateSkillsUI();
 
     // 限制上传 10 张 + 文件类型/大小
     const photosInput = document.getElementById('photosInput');
