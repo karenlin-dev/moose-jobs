@@ -123,7 +123,6 @@ class WorkerController extends Controller
 
         // ❗ 只保留基础字段（非 bio / skills / media）
         unset($data['bio']);
-        unset($data['category_ids']);
         
         // avatar
         if ($request->hasFile('avatar')) {
@@ -131,6 +130,30 @@ class WorkerController extends Controller
         }
 
         $profile->update($data);
+
+       // 同步多对多分类
+        $profile->categories()->sync($request->input('category_ids', []));
+
+        // photos 上传
+        if ($request->hasFile('photos')) {
+            // 找到已有最大 sort
+            $maxSort = $profile->photos()->max('sort') ?? 0;
+
+            foreach ($request->file('photos') as $index => $photo) {
+
+                $mime = $photo->getMimeType();
+                $type = str_starts_with($mime, 'video/') ? 'video' : 'image';
+
+                $path = $photo->store('profile_photos', 'public');
+
+                ProfilePhoto::create([
+                    'profile_id' => $profile->id,
+                    'path'       => $path,
+                    'type'       => $type, // image | video
+                    'sort'       => $maxSort + $index + 1,
+                ]);
+            }
+        }
 
         return back()->with('success', 'Profile updated successfully.');
     }
