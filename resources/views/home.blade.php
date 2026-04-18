@@ -306,7 +306,6 @@
                                     class="text-gray-600 hover:underline">
                                         💬 SMS
                                     </a>
-
                                 </div>
 
                             @else
@@ -318,7 +317,24 @@
                             @endif
 
                         </div>
+                        @if($profile?->facebook_url)
+                            <div class="mb-4">
+                             <a href="{{ $profile->facebook_url }}" target="_blank"
+                            class="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition">
 
+                                {{-- Facebook Icon (SVG) --}}
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    class="w-4 h-4">
+                                    <path d="M22 12a10 10 0 1 0-11.5 9.9v-7H8v-3h2.5V9.5c0-2.5 1.5-3.9 3.8-3.9
+                                            1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12H17l-.5 3h-2.6v7A10 10 0 0 0 22 12z"/>
+                                </svg>
+
+                                Facebook
+                            </a>
+                            </div>
+                        @endif
                     <p class="text-sm text-gray-500 mt-2">
                         Usually responds within 1 hour
                     </p>

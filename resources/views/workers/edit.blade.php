@@ -100,6 +100,16 @@
                 <x-input-error :messages="$bioErrors" />
             @endif
         </div>
+        <div class="mb-4">
+            <x-input-label for="facebook_url" value="Facebook Profile Link" />
+            <x-text-input 
+                id="facebook_url" 
+                name="facebook_url" 
+                type="url"
+                class="mt-1 block w-full"
+                placeholder="https://facebook.com/yourprofile"
+                value="{{ old('facebook_url', $profile->facebook_url ?? '') }}" />
+        </div>
 
         {{-- Photos --}}
         <div class="mb-6">
