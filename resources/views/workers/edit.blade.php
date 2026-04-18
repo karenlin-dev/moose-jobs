@@ -172,67 +172,6 @@
         }, 800); // debounce
     });    
 
-    function saveSkillsToServer() {
-
-        const selectedIds = Array.from(
-            document.querySelectorAll('.category-checkbox:checked')
-        ).map(el => el.value);
-
-        fetch('/worker/skills', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                category_ids: selectedIds
-            })
-        });
-    }
-    function getSelectedSkills() {
-        return Array.from(document.querySelectorAll('.category-checkbox:checked'))
-            .map(el => el.value);
-    }
-
-    function uploadAvatar(file) {
-
-        let formData = new FormData();
-        formData.append('avatar', file);
-
-        fetch('/worker/media', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: formData
-        });
-    }
-
-    function uploadPhotos(files) {
-
-        let formData = new FormData();
-
-        for (let file of files) {
-            formData.append('photos[]', file);
-        }
-
-        fetch('/worker/media', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: formData
-        });
-    }
-
-    document.querySelector('input[name="avatar"]').addEventListener('change', function () {
-        uploadAvatar(this.files[0]);
-    });
-
-    document.querySelector('#photosInput').addEventListener('change', function () {
-        uploadPhotos(this.files);
-    });
 </script>
 
 <script>
@@ -245,11 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkboxes.forEach(cb => { if(cb.checked) selected.push(cb.nextElementSibling.textContent); });
         skillInput.value = selected.join(', ');
     }
-    // checkboxes.forEach(cb => cb.addEventListener('change', updateSkillsUI));
-    checkboxes.forEach(cb => cb.addEventListener('change', () => {
-        updateSkillsUI();
-        saveSkillsToServer();
-    }));
+    checkboxes.forEach(cb => cb.addEventListener('change', updateSkillsUI));
     updateSkillsUI();
 
     // 限制上传 10 张 + 文件类型/大小
