@@ -32,7 +32,6 @@
                         <input type="radio" name="icon" value="{{ $key }}" class="peer hidden">{{ $emoji }}{{ $key }}
                     </div>
                     <div class="absolute inset-0 rounded-xl border-2 border-transparent peer-checked:border-green-500 pointer-events-none"></div>
-
                 </label>
             @endforeach
         </div>

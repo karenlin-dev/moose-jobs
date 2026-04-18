@@ -109,7 +109,7 @@
                                 <div>
                                     @if($bid->worker)
                                         <span class="font-medium">
-                                            {{ $bid->worker->name }}
+                                            {{ $bid->worker?->name }}
                                         </span>
                                     @else
                                         <span class="text-gray-400 italic">
