@@ -69,6 +69,9 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::post('/workers/update', [WorkerController::class, 'update'])
         ->name('workers.update');
 });
+Route::post('/worker/bio', [WorkerController::class, 'updateBio']);
+Route::post('/worker/skills', [WorkerController::class, 'updateSkills']);
+Route::post('/worker/media', [WorkerController::class, 'updateMedia']);
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
