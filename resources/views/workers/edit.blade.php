@@ -126,9 +126,11 @@
             @foreach($photos as $photo)
             <div class="relative group cursor-move" data-id="{{ $photo->id }}">
                 @if($photo->isVideo())
-                    <video controls class="w-full h-32 object-cover rounded">
-                        <source src="{{ asset('storage/'.$photo->path) }}" type="video/mp4">
-                    </video>
+                    <div class="w-full h-40 rounded overflow-hidden bg-black flex items-center justify-center">
+                        <video controls class="w-full h-full object-contain">
+                            <source src="{{ asset('storage/'.$photo->path) }}" type="video/mp4">
+                        </video>
+                    </div>
                 @else
                     <img src="{{ asset('storage/'.$photo->path) }}"
                         class="w-full h-32 object-cover rounded"
