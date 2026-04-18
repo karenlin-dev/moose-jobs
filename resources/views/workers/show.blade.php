@@ -14,8 +14,8 @@
             <p><strong>Phone:</strong> {{ $worker->profile->phone ?? '-' }}</p>
             <p><strong>Skills:</strong> {{ $worker->profile->skills ?? '-' }}</p>
             <p><strong>Bio:</strong>
-        <div class="mt-3 p-3 bg-gray-50 rounded-xl text-sm text-gray-700 whitespace-pre-line leading-relaxed">
-                {{ $worker->profile->bio ?? '-' }}
+       <div class="mt-3 p-4 bg-white border rounded-xl text-sm text-gray-700 leading-relaxed whitespace-pre-line break-words shadow-sm">
+            {{ $worker->profile->bio ?? 'No bio added yet.' }}
         </div>
             <p><strong>Joined:</strong> {{ $worker->created_at->format('Y-m-d') }}</p>
         </div>
@@ -67,9 +67,11 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     @foreach($worker->profile->photos as $photo)
                          @if($photo->isVideo())
-                            <video controls class="w-full h-32 object-cover rounded">
-                                <source src="{{ asset('storage/'.$photo->path) }}" type="video/mp4">
-                            </video>
+                            <div class="w-full h-40 rounded overflow-hidden bg-black flex items-center justify-center">
+                                <video controls class="w-full h-full object-contain">
+                                    <source src="{{ asset('storage/'.$photo->path) }}" type="video/mp4">
+                                </video>
+                            </div>
                         @else
                             <img src="{{ asset('storage/'.$photo->path) }}"
                                 class="w-full h-32 object-cover rounded"
