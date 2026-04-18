@@ -57,8 +57,9 @@ class WorkerController extends Controller
     {
         $user = Auth::user();
         // // 如果 profile 不存在则创建
-        $profile = $user->profile ?? new Profile(['user_id' => $user->id]);
-
+        $profile = $user->profile ?? Profile::create([
+            'user_id' => $user->id,
+        ]);
         $data = $request->validated();
 
         // ✅ 防止 403（服务器 WAF 拦截）

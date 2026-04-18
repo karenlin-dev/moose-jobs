@@ -61,7 +61,7 @@ Route::get('/workers/{worker}', [WorkerController::class, 'show'])
 /**
  * Auth+Verified: Worker 自己编辑资料
  */
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
 
     Route::get('/workers/edit', [WorkerController::class, 'edit'])
         ->name('workers.edit');
