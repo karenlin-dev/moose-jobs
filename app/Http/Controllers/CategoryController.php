@@ -4,64 +4,70 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Category;
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
-    // 获取所有分类
     public function index()
     {
-        $categories = Category::all();
-        return response()->json($categories);
+        $categories = Category::latest()->get();
+                
+        return view('admin.categories.index', compact('categories'));
     }
 
-    // 创建新分类
+    public function create()
+    {
+        return view('admin.categories.create');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255'
+            'name' => 'required|string|max:255',
+            'icon' => 'nullable|image|mimes:jpg,jpeg,png,svg,webp|max:2048',
+        ]);
+        $slug = Str::slug($request->name);
+
+        $count = Category::where('slug', 'like', $slug.'%')->count();
+
+        if ($count > 0) {
+            $slug = $slug . '-' . ($count + 1);
+        }
+        Category::create([
+            'name' => $request->name,
+            'slug' => $slug,
+            'color' => $request->color ?? 'gray',
+            'icon' => $request->icon,
         ]);
 
-        $category = Category::create([
-            'name' => $request->name
-        ]);
-
-        return response()->json($category, 201);
+    return redirect()->route('admin.categories.index');
     }
 
-    // 查看单个分类
-    public function show(Category $category)
+    public function edit(Category $category)
     {
-        return $category;
+        return view('admin.categories.edit', compact('category'));
     }
 
-    // 更新分类
-   public function update(Request $request, $id)
+    public function update(Request $request, Category $category)
     {
-        $request->validate([
-            'name' => 'required|string|max:255'
+        
+        $category->update([
+            'name' => $request->name,
+            'slug' => Str::slug($request->name),
+            'color' => $request->color ?? 'gray',
+            'icon' => $request->icon
         ]);
 
-        $category = \App\Models\Category::findOrFail($id);
-        $category->name = $request->name;
-        $category->save();
 
-        return response()->json([
-            'success' => true,
-            'data' => $category
-        ]);
+        return redirect()->route('admin.categories.index')
+            ->with('success', 'Updated');
     }
 
-    // 删除分类
+    public function destroy(Category $category)
+    {
+        $category->delete();
 
-public function destroy($id)
-{
-    $category = \App\Models\Category::findOrFail($id);
-    $category->delete();
-
-    return response()->json([
-        'success' => true,
-        'message' => "Category with id {$id} deleted."
-    ]);
-}
+        return back()->with('success', 'Deleted');
+    }
 
 }

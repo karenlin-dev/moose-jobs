@@ -18,7 +18,6 @@ class HomeController extends Controller
             ->get();
 
         $categories = Category::orderBy('name')->get();
-
         $announcements = Announcement::latest()
             ->take(5)
             ->get();
