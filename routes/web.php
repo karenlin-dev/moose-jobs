@@ -168,7 +168,7 @@ Route::get('login/status', function() {
 
 Route::post('/contact', [ContactController::class, 'send']);
 
-Route::middleware(['auth', 'admin'])
+Route::middleware(['auth'])
     ->prefix('admin')   // ⭐ URL必须加这个
     ->as('admin.')      // ⭐ route name
     ->group(function () {

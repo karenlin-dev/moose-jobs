@@ -61,6 +61,18 @@ class WorkerController extends Controller
 
         $data = $request->validated();
 
+        // ✅ 防止 403（服务器 WAF 拦截）
+        if (isset($data['bio'])) {
+            // 去掉 HTML 标签
+            $data['bio'] = strip_tags($data['bio']);
+
+            // 去掉 URL（非常关键）
+            $data['bio'] = preg_replace('/https?:\/\/\S+/', '', $data['bio']);
+
+            // 限制长度（防止异常内容）
+            $data['bio'] = mb_substr($data['bio'], 0, 500);
+        }
+
         // skills = categories 文本拼接
         $data['skills'] = isset($data['category_ids'])
             ? Category::whereIn('id', $data['category_ids'])
