@@ -48,10 +48,71 @@
                     </select>
                     <x-input-error :messages="$errors->get('category_id')" />
                 </div>
+                <div>
+                    <x-input-label for="service_type" value="Service Type" />
+
+                    <select id="service_type" name="service_type"
+                            class="mt-1 block w-full border rounded-md">
+                        <option value="">Normal Task</option>
+                        <option value="errand">Errand</option>
+                        <option value="airport">Airport Pickup</option>
+                    </select>
+                </div>
+                     {{-- Pickup Location --}}
+                <div>
+                    <x-input-label for="pickup_address" value="Pickup Location" />
+                    <input type="text"
+                        name="pickup_address"
+                        id="pickup_address"
+                        class="w-full border rounded px-3 py-2"
+                        placeholder="Enter pickup address">
+                </div>
+
+                {{-- Dropoff Location --}}
+                <div>
+                    <x-input-label for="dropoff_address" value="Dropoff Location" />
+                    <input type="text"
+                        name="dropoff_address"
+                        id="dropoff_address"
+                        class="w-full border rounded px-3 py-2"
+                        placeholder="Enter dropoff address">
+                </div>
+            <div id="airport-fields" class="hidden mt-4 space-y-4">
+
+                {{-- Scheduled At --}}
+                <div>
+                    <x-input-label for="scheduled_at" value="Scheduled Time" />
+                    <input type="datetime-local"
+                        name="scheduled_at"
+                        id="scheduled_at"
+                        class="w-full border rounded px-3 py-2">
+                </div>
+
+                {{-- Passengers --}}
+                <div>
+                    <x-input-label for="passengers" value="Passengers" />
+                    <input type="number"
+                        name="passengers"
+                        id="passengers"
+                        min="1"
+                        class="w-full border rounded px-3 py-2"
+                        placeholder="e.g. 1, 2, 3">
+                </div>
+
+                {{-- Luggage --}}
+                <div>
+                    <x-input-label for="luggage" value="Luggage" />
+                    <input type="number"
+                        name="luggage"
+                        id="luggage"
+                        min="0"
+                        class="w-full border rounded px-3 py-2"
+                        placeholder="Number of bags">
+                </div>
+
+            </div>
                 {{-- 跑腿专属字段 --}}
                 <div id="errand-fields" class="hidden">
-                    <input id="pickup_address" name="pickup_address" placeholder="Pickup address (Moose Jaw only)">
-                    <input id="dropoff_address" name="dropoff_address" placeholder="Dropoff address (Moose Jaw only)">
                     {{-- 编辑页增加状态 --}}
                     @if(isset($task))
                         <x-input-label for="delivery_status" value="Delivery Status" class="mt-2"/>
@@ -158,7 +219,9 @@
         </script>
 
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-
+        <script>
+            const IS_AIRPORT = document.getElementById('service_type')?.value === 'airport';
+        </script>
         <script>
         let files = [];
 
@@ -248,7 +311,44 @@
             categorySelect.addEventListener('change', toggleErrandFields);
         });
         </script>
-        
+       <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const serviceType = document.getElementById('service_type');
+            const airportFields = document.getElementById('airport-fields');
+            const errandFields = document.getElementById('errand-fields');
+
+            function toggleFields() {
+                const type = serviceType.value;
+
+                // airport
+                if (type === 'airport') {
+                    airportFields.classList.remove('hidden');
+                    errandFields.classList.add('hidden');
+                }
+
+                // errand
+                else if (type === 'errand') {
+                    airportFields.classList.add('hidden');
+                    errandFields.classList.remove('hidden');
+                }
+
+                // normal
+                else {
+                    airportFields.classList.add('hidden');
+                    errandFields.classList.add('hidden');
+                }
+
+                // 🚫 如果是 airport，顺便禁止地图计算
+                window.IS_AIRPORT = (type === 'airport');
+            }
+
+            serviceType.addEventListener('change', toggleFields);
+
+            // 初始化
+            toggleFields();
+        });
+        </script>
         <script>
                 let map, directionsService, directionsRenderer;
                 let pickupAutocomplete, dropoffAutocomplete;
@@ -292,12 +392,16 @@
 
                     if (pickupInput) {
                         pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
-                        pickupAutocomplete.addListener('place_changed', drawRoute);
+                        pickupAutocomplete.addListener('place_changed', () => {
+                            if (!IS_AIRPORT) drawRoute();
+                        });
                     }
 
                     if (dropoffInput) {
                         dropoffAutocomplete = new google.maps.places.Autocomplete(dropoffInput, options);
-                        dropoffAutocomplete.addListener('place_changed', drawRoute);
+                        dropoffAutocomplete.addListener('place_changed', () => {
+                            if (!IS_AIRPORT) drawRoute();
+                        });
                     }
 
                     // 重量 / 体积变化时重新算价格
@@ -306,6 +410,7 @@
                 }
 
                 function drawRoute() {
+                     if (IS_AIRPORT) return; // 🚫 airport 不算路线
                     const pickup = document.getElementById('pickup_address')?.value;
                     const dropoff = document.getElementById('dropoff_address')?.value;
 
@@ -353,6 +458,34 @@
 
                     document.getElementById('budget').value = price.toFixed(2);
                 }
+        </script>
+
+        <script>
+        function initAutocompleteAirport() {
+
+            const pickupInput = document.getElementById('pickup_address');
+            const dropoffInput = document.getElementById('dropoff_address');
+
+            const options = {
+                componentRestrictions: { country: "ca" }, // 加拿大
+                fields: ["formatted_address", "geometry"]
+            };
+
+            const pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
+            const dropoffAutocomplete = new google.maps.places.Autocomplete(dropoffInput, options);
+
+            pickupAutocomplete.addListener("place_changed", function () {
+                const place = pickupAutocomplete.getPlace();
+                pickupInput.value = place.formatted_address;
+            });
+
+            dropoffAutocomplete.addListener("place_changed", function () {
+                const place = dropoffAutocomplete.getPlace();
+                dropoffInput.value = place.formatted_address;
+            });
+        }
+
+        window.onload = initAutocompleteAirport;
         </script>
 
 <script

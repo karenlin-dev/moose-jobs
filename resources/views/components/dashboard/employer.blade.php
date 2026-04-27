@@ -55,46 +55,113 @@
                 Budget: ${{ $task->budget }} | Status: {{ $task->status }}
             </p>
             <div class="flex gap-2">
-                @php
-                    $taskUserId = (int) $task->user_id;
-                    $authId = auth()->id();
-                @endphp
-                @if($authId === $taskUserId)
+
+            <a href="{{ route('tasks.show', $task) }}"
+            class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-sm">
+                View
+            </a>
+            {{-- ✏️ Edit（只允许 owner） --}}
+            @auth
+                @if($task->isOwner())
                     <a href="{{ route('tasks.edit', $task) }}"
-                    class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-sm">
-                        Edit
+                    class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-sm">
+                        Edit ✏️
                     </a>
                 @endif
+            @endauth
+             {{-- 🗑 Delete（只允许 owner） --}}
+            @auth
+                @if($task->isOwner())
+                    <form method="POST" action="{{ route('tasks.destroy', $task) }}">
+                        @csrf
+                        @method('DELETE')
 
-                <a href="{{ route('tasks.show', $task) }}"
-                class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-sm">
-                    View
-                </a>
-                {{-- Quick Complete --}}
+                        <button class="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200 text-sm"
+                                onclick="return confirm('Delete this task?')">
+                            Delete 🗑
+                        </button>
+                    </form>
+                @endif
+            @endauth
+
+            {{-- ========================= --}}
+            {{-- ✈ AIRPORT：不走 bid --}}
+            {{-- ========================= --}}
+            @if($task->service_type === 'airport')
+
+                @if($task->worker_id)
+
+                    <div class="bg-blue-50 p-3 rounded text-sm space-y-1">
+                        <div class="font-medium text-blue-800">
+                            Driver Assigned
+                        </div>
+
+                        <div>
+                            Name: {{ $task->worker?->name ?? 'N/A' }}
+                        </div>
+
+                        <div>
+                            Phone: {{ $task->worker?->phone ?? 'N/A' }}
+                        </div>
+                    </div>
+
+                    {{-- ✅ 支付按钮（只有雇主能看到） --}}
+                    @if(
+                        auth()->id() === $task->user_id &&
+                        $task->worker_id &&
+                        $task->order_id &&
+                        $task->status !== 'paid'
+                    )
+                        <a href="{{ route('orders.pay', $task->order_id) }}"
+                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
+                            💳 Pay Now
+                        </a>
+                    @endif
+
+                    {{-- 已支付 --}}
+                    @if($task->status === 'paid')
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded text-sm">
+                            Paid ✅
+                        </span>
+                    @endif
+
+                @else
+
+                    <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-sm">
+                        Waiting Worker Accept
+                    </span>
+
+                @endif
+
+            {{-- ========================= --}}
+            {{-- 🧾 NORMAL：bid流程 --}}
+            {{-- ========================= --}}
+            @else
+
                 @if(
-                    $authId === $taskUserId &&
+                    auth()->id() === $task->id  &&
                     $task->status !== 'completed'
                 )
-                    <button
-                        onclick="quickComplete({{ $task->id }})"
-                        class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm">
+                    <button onclick="quickComplete({{ $task->id }})"
+                            class="px-3 py-1 bg-green-100 text-green-700 rounded text-sm">
                         ✓ Complete
                     </button>
                 @endif
 
-                {{-- Quick Accept --}}
                 @if(
-                    $authId === $taskUserId &&
+                    auth()->id() === $task->id  &&
                     $task->status === 'open' &&
                     $task->bids->where('status','pending')->count() > 0
                 )
-                    <button
-                        onclick="quickAccept({{ $task->id }})"
-                        class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 text-sm">
+                    <button onclick="quickAccept({{ $task->id }})"
+                            class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded text-sm">
                         ⚡ Accept Bid
                     </button>
                 @endif
-            </div>  
+
+            @endif
+
+        </div>
 
             @if($task->bids->count() > 0)
                 <div class="mt-2">

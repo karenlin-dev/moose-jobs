@@ -12,6 +12,9 @@ use App\Enums\JobStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\DB;
+use App\Services\OrderService;
+use App\Models\Order;
 
 class TaskJobController extends Controller
 {
@@ -22,7 +25,7 @@ class TaskJobController extends Controller
         // 获取所有分类，用于 Blade 的选项卡
         $categories = \App\Models\Category::orderBy('name')->get();
 
-        $tasks = TaskJob::select('id', 'title', 'description', 'user_id', 'status', 'budget','dropoff_address')
+        $tasks = TaskJob::select('id', 'title', 'description', 'user_id', 'status', 'budget','pickup_address','dropoff_address','service_type')
             ->with(['user', 'category', 'bids']) // 加 bids 方便快速接受按钮显示
             ->where('status', JobStatus::OPEN)
             ->when($slug, function($query) use ($slug) {
@@ -57,6 +60,12 @@ class TaskJobController extends Controller
             'budget' => 'required|numeric|min:0',
             'category_id' => 'nullable|integer|exists:categories,id',
 
+            'service_type' => 'nullable|string',
+            'scheduled_at' => 'nullable|date',
+            'pickup_time' => 'nullable|date',
+            'passengers' => 'nullable|integer|min:1|max:10',
+            'luggage' => 'nullable|integer|min:0|max:10',
+
             'pickup_address' => 'nullable|string|max:255',
             'dropoff_address' => 'nullable|string|max:255',
             'distance_km' => 'nullable|numeric|min:0',
@@ -76,6 +85,21 @@ class TaskJobController extends Controller
             'budget' => $validated['budget'],
             'category_id' => $validated['category_id'] ?? null,
 
+            'service_type' => $validated['service_type'] ?? null,
+            // ✅ 直接在这里写
+            'task_type' => TaskJob::resolveTaskType($validated['service_type'] ?? null),
+            'pickup_time' => $validated['pickup_time'] ?? null,
+            // ✈️ airport fields
+            'worker_id' => null,
+            'can_accept' => true,
+            'scheduled_at' => $validated['scheduled_at'] ?? null,
+            'passengers' => $validated['passengers'] ?? null,
+            'luggage' => $validated['luggage'] ?? null,
+            'payment_status' => 'pending',
+
+            // 🧳 pickup fields
+            'pickup_time' => $validated['pickup_time'] ?? null,
+
             'pickup_address' => $validated['pickup_address'] ?? null,
             'dropoff_address' => $validated['dropoff_address'] ?? null,
             'distance_km' => $validated['distance_km'] ?? null,
@@ -86,7 +110,7 @@ class TaskJobController extends Controller
             'status' => JobStatus::OPEN,
         ]);
 
-        // 保存多张图片
+        // 保存图片
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $img) {
                 $path = $img->store('task_photos', 'public');
@@ -101,7 +125,6 @@ class TaskJobController extends Controller
             ->route('dashboard')
             ->with('success', 'Task created successfully.');
     }
-
   
 
     public function myJobs(Request $request)
@@ -161,19 +184,28 @@ class TaskJobController extends Controller
             'city' => 'required|string',
             'budget' => 'nullable|numeric',
             'category_id' => 'nullable|exists:categories,id',
+
+            'service_type' => 'nullable|string', // ✅ 必须加
+            'pickup_time' => 'nullable|date',
             'pickup_address' => 'nullable|string|max:255',
             'dropoff_address' => 'nullable|string|max:255',
-            'dropoff_address' => 'nullable|string|max:255',
-            'delivery_status' => 'required|in:pending,in_transit,delivered',
+
+            'delivery_status' => 'nullable|in:pending,in_transit,delivered',
+
             'distance_km' => 'nullable|numeric|min:0',
             'weight_kg' => 'nullable|numeric|min:0|max:25',
             'size_level' => 'nullable|in:small,medium,large',
+
             'photos.*' => 'image|max:5120',
         ]);
 
+        $serviceType = $data['service_type'] ?? $task->service_type;
+
+        $data['task_type'] = TaskJob::resolveTaskType($serviceType);
+
         $task->update($data);
 
-        // 新图片
+        // 📸 图片处理（保持你原来的）
         if ($request->hasFile('photos')) {
             $maxSort = $task->photos()->max('sort') ?? 0;
 
@@ -185,10 +217,63 @@ class TaskJobController extends Controller
                 ]);
             }
         }
+
         return redirect()->route('dashboard')
-                     ->with('success', 'Task updated successfully!');
+            ->with('success', 'Task updated successfully!');
     }
 
+
+    public function acceptAirport(TaskJob $task, OrderService $orderService)
+    {
+        $success = false;
+
+        DB::transaction(function () use ($task, &$success, $orderService) {
+
+            $freshTask = TaskJob::where('id', $task->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (
+                !$freshTask ||
+                $freshTask->worker_id ||
+                $freshTask->status !== JobStatus::OPEN
+            ) {
+                return;
+            }
+
+            $freshTask->update([
+                'worker_id' => auth()->id(),
+                'status' => JobStatus::IN_PROGRESS,
+            ]);
+
+            // ✅ 防重复创建订单（最安全）
+            $order = Order::firstOrCreate(
+                ['task_job_id' => $freshTask->id],
+                [
+                    'employer_id' => $freshTask->user_id,
+                    'worker_id' => $freshTask->worker_id,
+                    'amount' => $freshTask->budget ?? 0,
+                    'service_type' => 'airport',
+                    'pickup_address' => $freshTask->pickup_address ?? null,
+                    'dropoff_address' => $freshTask->dropoff_address ?? null,
+                    'scheduled_at' => $freshTask->scheduled_at ?? null,
+                    'passengers' => $freshTask->passengers ?? null,
+                    'luggage' => $freshTask->luggage ?? null,
+                    'status' => 'pending',
+                ]
+            );
+
+            $freshTask->update([
+                'order_id' => $order->id,
+            ]);
+
+            $success = true;
+        });
+
+        return $success
+            ? redirect()->route('tasks.show', $task->id)->with('success', 'Order accepted!')
+            : back()->with('error', 'Too late, already taken.');
+    }
 
 
     public function edit(TaskJob $task)
@@ -215,13 +300,16 @@ class TaskJobController extends Controller
     }
 
 
-    public function destroy($id) {
-        $job = TaskJob::findOrFail($id);
-        $job->delete();
+    public function destroy(TaskJob $task)
+    {
+        if ($task->user_id !== auth()->id()) {
+            abort(403);
+        }
 
-        return response()->json([
-            'message' => 'Job deleted successfully'
-        ]);
+        $task->delete();
+
+        return redirect()->route('tasks.index')
+            ->with('success', 'Task deleted');
     }
 
    public function destroyPhoto(TaskPhoto $photo)

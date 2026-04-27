@@ -25,6 +25,87 @@
                     {{ $task->category->name }}
                 </span>
             @endif
+            @if($task->service_type === 'airport')
+            <div class="mt-3 bg-gray-50 p-4 rounded space-y-2 text-sm">
+
+                <div class="font-semibold text-gray-700">
+                    ✈ Airport Pickup Details
+                </div>
+
+                <div>
+                    <strong>Pickup Location:</strong>
+                    {{ $task->pickup_address ?? 'N/A' }}
+                </div>
+
+                <div>
+                    <strong>Dropoff Location:</strong>
+                    {{ $task->dropoff_address ?? 'N/A' }}
+                </div>
+
+                <div>
+                    <strong>Scheduled Time:</strong>
+                    {{ $task->scheduled_at ? \Carbon\Carbon::parse($task->scheduled_at)->format('Y-m-d H:i') : 'N/A' }}
+                </div>
+
+                <div>
+                    <strong>Passengers:</strong>
+                    {{ $task->passengers ?? 0 }}
+                </div>
+
+                <div>
+                    <strong>Luggage:</strong>
+                    {{ $task->luggage ?? 0 }}
+                </div>
+
+            </div>
+        @endif
+            @if($task->worker_id)
+                <div class="bg-blue-50 p-4 rounded space-y-2">
+
+                    <div class="font-semibold text-blue-700">
+                        🚗 Driver Assigned
+                    </div>
+
+                    <div>
+                        Name: {{ $task->worker?->name }}
+                    </div>
+
+                    <div>
+                        Phone: {{ $task->worker?->phone ?? 'N/A' }}
+                    </div>
+
+                    {{-- 💳 Payment --}}
+                    @if($task->order)
+
+                        @if($task->order->status !== 'paid')
+
+                            @if(auth()->id() === $task->user_id)
+
+                                <a href="{{ route('orders.pay', $task->order->id) }}"
+                                class="inline-block mt-2 px-4 py-2 bg-green-600 text-white rounded">
+                                    Pay Now
+                                </a>
+
+                            @endif
+
+                        @else
+
+                            <span class="text-green-600 font-semibold">
+                                Paid ✅
+                            </span>
+
+                        @endif
+
+                    @endif
+
+                </div>
+
+            @else
+
+                <span class="text-gray-500">
+                    Waiting for driver to accept...
+                </span>
+            @endif
              {{-- 跑腿任务地址 --}}
             @if($task->category?->slug === 'errand')
                 <div class="mt-2 text-sm text-gray-600">
@@ -154,83 +235,104 @@
         {{-- ===================== --}}
         {{-- 投标入口（Worker） --}}
         {{-- ===================== --}}
+       {{-- ===================== --}}
+        {{-- Worker Action --}}
+        {{-- ===================== --}}
         <div class="bg-white p-6 rounded shadow">
+
             @auth
+
                 @if(auth()->user()->role === 'worker')
-                    @if(($task->status ?? 'open') === 'open')
+
+                    {{-- 🔥 Instant Task --}}
+                    @if($task->is_instant)
+
                         <div class="flex items-center justify-between">
+
                             <div>
-                                <div class="font-semibold">Want to bid?</div>
-                                <div class="text-sm text-gray-600">Submit your price and message.</div>
+                                <div class="font-semibold text-blue-600">
+                                    Instant Task
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    You can accept this task immediately.
+                                </div>
                             </div>
 
-                            <a href="{{ route('bids.create', $task) }}"
-                               class="px-4 py-2 rounded bg-indigo-600 text-white text-sm">
-                                Place a Bid
-                            </a>
-                        </div>
-                    @else
-                        <div class="text-sm text-gray-600">This task is not open for bids.</div>
-                    @endif
-                @else
-                    <div class="text-sm text-gray-600">
-                        Only service providers (workers) can bid.
-                    </div>
-                @endif
-            @else
-                <div class="flex items-center justify-between">
-                    <div class="text-sm text-gray-600">
-                        Login to place a bid as a worker.
-                    </div>
-                    <a href="{{ route('login') }}" class="px-4 py-2 rounded bg-black text-white text-sm">
-                        Login
-                    </a>
-                </div>
-            @endauth
-        </div>
-
-        {{-- ===================== --}}
-        {{-- 投标列表（Employer 自己） --}}
-        {{-- ===================== --}}
-        @auth
-            @if(auth()->user()->role === 'employer' && auth()->id() === $task->user_id)
-                <div class="bg-white p-6 rounded shadow space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-semibold">Bids</h3>
-                        <span class="text-sm text-gray-500">
-                            {{ $task->bids?->count() ?? 0 }} total
-                        </span>
-                    </div>
-
-                    @forelse($task->bids as $bid)
-                        <div class="border rounded p-4 space-y-1">
-                            <div class="text-sm text-gray-700">
-                                <span class="font-semibold">Worker:</span>
-                                {{ $bid->user->name ?? 'Worker' }}
-                            </div>
-                            <div class="text-sm text-gray-700">
-                                <span class="font-semibold">Price:</span> ${{ $bid->price }}
-                            </div>
-                            <div class="text-sm text-gray-700">
-                                <span class="font-semibold">Status:</span> {{ strtoupper($bid->status) }}
-                            </div>
-
-                            @if($bid->status === 'pending' && ($task->status ?? 'open') === 'open')
-                                <form method="POST" action="{{ route('bids.accept', $bid) }}">
+                            {{-- 已接单 --}}
+                            @if($task->worker_id)
+                                <button disabled
+                                    class="px-4 py-2 rounded bg-gray-300 text-gray-600 text-sm">
+                                    Already Accepted
+                                </button>
+                            @else
+                                <form method="POST" action="{{ route('tasks.acceptAirport', $task) }}">
                                     @csrf
-                                    @method('PATCH')
-                                    <button class="mt-2 px-3 py-1 rounded bg-black text-white text-sm" type="submit">
-                                        Accept
+                                    <button class="px-4 py-2 rounded bg-blue-600 text-white text-sm">
+                                        Accept Task
                                     </button>
                                 </form>
                             @endif
-                        </div>
-                    @empty
-                        <p class="text-gray-500">No bids yet.</p>
-                    @endforelse
-                </div>
-            @endif
-        @endauth
 
-    </div>
+                        </div>
+
+                    {{-- 🔥 Bidding Task --}}
+                    @else
+
+                        @if($task->status === 'open')
+
+                            <div class="flex items-center justify-between">
+
+                                <div>
+                                    <div class="font-semibold">
+                                        Bidding Task
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        Submit your price and message.
+                                    </div>
+                                </div>
+
+                                <a href="{{ route('bids.create', $task) }}"
+                                class="px-4 py-2 rounded bg-indigo-600 text-white text-sm">
+                                    Place a Bid
+                                </a>
+
+                            </div>
+
+                        @else
+
+                            <div class="text-sm text-gray-600">
+                                This task is not open.
+                            </div>
+
+                        @endif
+
+                    @endif
+
+                @else
+
+                    <div class="text-sm text-gray-600">
+                        Only workers can perform this action.
+                    </div>
+
+                @endif
+
+            @else
+
+                <div class="flex items-center justify-between">
+
+                    <div class="text-sm text-gray-600">
+                        Login to participate as a worker.
+                    </div>
+
+                    <a href="{{ route('login') }}"
+                    class="px-4 py-2 rounded bg-black text-white text-sm">
+                        Login
+                    </a>
+
+                </div>
+
+            @endauth
+
+        </div>
+
 </x-app-layout>
