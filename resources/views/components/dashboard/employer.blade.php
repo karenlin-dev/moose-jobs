@@ -187,8 +187,11 @@
                                     <span class="text-gray-400 text-sm">({{ $bid->status }})</span>
                                 </div>
                                 <div class="flex space-x-2">
-                                    <a href="{{ route('workers.show', $bid->worker) }}"
-                                    class="text-indigo-600 hover:underline">View Profile</a>
+                                   @if($bid->worker)
+                                        <a href="{{ route('workers.show', $bid->worker->id) }}">
+                                            View Worker
+                                        </a>
+                                    @endif
 
                                     @if($bid->status === 'pending' && $task->status === 'open')
                                         <form class="accept-bid-form" method="POST" action="{{ route('bids.accept', $bid) }}">
