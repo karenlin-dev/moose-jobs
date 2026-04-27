@@ -36,7 +36,7 @@ class DashboardController extends Controller
 
         // worker 的 bids（带 task + task.category）
         $bids = $user->bids()
-            ->with(['task.category'])
+            ->with(['task.category', 'worker'])
             ->latest()
             ->get();
 
@@ -59,6 +59,14 @@ class DashboardController extends Controller
         }
 
         $tasks = $tasksQuery->latest()->get();
+        return view('dashboard', compact(
+            'user',
+            'tasks',
+            'bids',
+            'assignments',
+            'categories',
+            'categoryId'
+        ));
 
     }
 
