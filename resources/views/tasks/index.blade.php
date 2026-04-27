@@ -59,19 +59,17 @@
                         </span>
                     @endif
                 </div>
-
                 <div class="shrink-0 flex flex-col items-end gap-2">
-                    <a href="{{ route('tasks.show', $task) }}"
-                    class="text-gray-700 hover:underline text-sm">
-                        View →
-                    </a>
+                   <a href="{{ route('tasks.show', $task) }}"
+                    class="text-sm {{ $task->is_instant ? 'text-blue-600' : 'text-gray-700' }} hover:underline">
 
+                        {{ $task->is_instant 
+                            ? 'Instant Task - View & Accept →' 
+                            : 'View →' }}
+                    </a>
                     {{-- Edit：只有 task owner 才能看到 --}}
                     @auth
-                        @if(
-                            auth()->user()->role === 'employer' &&
-                            auth()->id() === (int)$task->user_id
-                        )
+                        @if($task->isOwner())
                             <a href="{{ route('tasks.edit', $task) }}"
                             class="text-sm text-gray-500 hover:text-black hover:underline">
                                 Edit ✎
@@ -86,7 +84,7 @@
                             @endif
 
                             {{-- Accept Bid（如果有 pending bid） --}}
-                            @if($task->bids->where('status','pending')->count() > 0)
+                            @if($task->canHaveBids() && $task->hasPendingBids())
                                 <button
                                     class="text-sm text-indigo-600 hover:text-indigo-800 hover:underline"
                                     onclick="quickAccept({{ $task->id }})">
@@ -97,11 +95,13 @@
                     @endauth
                     {{-- 只有登录且是 worker 才能投标 --}}
                     @auth
-                        @if(auth()->user()->role === 'worker')
-                            <a href="{{ route('bids.create', $task) }}"
-                               class="text-indigo-600 hover:underline text-sm">
-                                Bid →
-                            </a>
+                        @if($task->task_type === 'bidding')
+                            @if(auth()->user()->role === 'worker')
+                                <a href="{{ route('bids.create', $task) }}"
+                                class="text-indigo-600 hover:underline text-sm">
+                                    Bid →
+                                </a>
+                            @endif
                         @endif
                     @else
                         <a href="{{ route('login') }}"

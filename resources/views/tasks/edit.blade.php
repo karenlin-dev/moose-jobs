@@ -7,24 +7,51 @@
     </x-slot>
 
     <div class="max-w-3xl mx-auto py-8">
+        @if (session('success'))
+            <div class="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded">
+                {{ session('success') }}
+            </div>
+        @endif
         <form method="POST"
               action="{{ route('tasks.update', $task) }}"
               enctype="multipart/form-data"
               class="space-y-6">
             @csrf
             @method('PUT')
-
+            @if ($errors->any())
+                <div class="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded">
+                    <div class="font-semibold mb-1">
+                        Please fix the following errors:
+                    </div>
+                    <ul class="list-disc list-inside text-sm">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             {{-- Title --}}
             <div>
                 <x-input-label for="title" value="Task Title" />
-                <x-text-input id="title" name="title" value="{{ old('title', $task->title) }}" required class="mt-1 block w-full" />
+                <x-text-input
+                    id="title"
+                    name="title"
+                    value="{{ old('title', $task->title) }}"
+                    required
+                    class="mt-1 block w-full {{ $errors->has('title') ? 'border-red-500' : '' }}"
+                />
                 <x-input-error :messages="$errors->get('title')" />
             </div>
 
             {{-- Description --}}
             <div>
                 <x-input-label for="description" value="Description" />
-                <textarea id="description" name="description" rows="5" class="mt-1 block w-full border rounded-md" required>{{ old('description', $task->description) }}</textarea>
+                <textarea
+                    id="description"
+                    name="description"
+                    class="mt-1 block w-full border rounded-md {{ $errors->has('description') ? 'border-red-500' : '' }}"
+                    required
+                >{{ old('description', $task->description) }}</textarea>
                 <x-input-error :messages="$errors->get('description')" />
             </div>
 
@@ -38,7 +65,10 @@
             {{-- Category --}}
             <div>
                 <x-input-label for="category_id" value="Category" />
-                <select name="category_id" class="mt-1 block w-full rounded-md border">
+                <select
+                    name="category_id"
+                    class="mt-1 block w-full rounded-md border {{ $errors->has('category_id') ? 'border-red-500' : '' }}"
+                >
                     @foreach($categories as $category)
                         <option value="{{ $category->id }}" data-slug="{{ $category->slug }}" @selected(old('category_id', $task->category_id) == $category->id)>
                         {{ $category->name }}
@@ -48,20 +78,76 @@
                 </select>
                 <x-input-error :messages="$errors->get('category_id')" />
             </div>
+            <x-input-label for="service_type" value="Service Type" />
+            <select name="service_type" id="service_type" class="mt-1 block w-full border rounded">
+                <option value="">Normal Task</option>
+                <option value="errand" @selected($task->service_type === 'errand')>Errand</option>
+                <option value="airport" @selected($task->service_type === 'airport')>Airport Pickup</option>
+            </select>
+            <x-input-label for="pickup_time" value="Pickup Time" />
+            <input type="datetime-local"
+                name="pickup_time" id="pickup_time"
+                value="{{ old('pickup_time', optional($task->pickup_time)->format('Y-m-d\TH:i')) }}"
+                class="w-full border rounded px-3 py-2">
+            {{-- Scheduled At --}}
+                <div>
+                    <x-input-label for="scheduled_at" value="Scheduled Time" />
+                    <input type="datetime-local"
+                        name="scheduled_at"
+                        id="scheduled_at"
+                        value="{{ old('scheduled_at', optional($task->scheduled_at)->format('Y-m-d\TH:i')) }}"
+                        class="w-full border rounded px-3 py-2">
+                </div>
+            {{-- Pickup Location --}}
+                <div>
+                    <x-input-label for="pickup_address" value="Pickup Location" />
+                    <input type="text"
+                        name="pickup_address"
+                        id="pickup_address"
+                        class="w-full border rounded px-3 py-2"
+                        value="{{ old('pickup_address', $task->pickup_address) }}"
+                        placeholder="Enter pickup address">
+                </div>
 
+                {{-- Dropoff Location --}}
+                <div>
+                    <x-input-label for="dropoff_address" value="Dropoff Location" />
+                    <input type="text"
+                        name="dropoff_address"
+                        id="dropoff_address"
+                        class="w-full border rounded px-3 py-2"
+                        value="{{ old('dropoff_address', $task->dropoff_address) }}"
+                        placeholder="Enter dropoff address">
+                </div>
+            <div id="airport-fields" class="mt-4 space-y-4 {{ $task->service_type !== 'airport' ? 'hidden' : '' }}">
+
+                {{-- Passengers --}}
+                <div>
+                    <x-input-label for="passengers" value="Passengers" />
+                    <input type="number"
+                        name="passengers"
+                        id="passengers"
+                        min="1"
+                        class="w-full border rounded px-3 py-2"
+                        value="{{ old('passengers', $task->passengers) }}"
+                        placeholder="e.g. 1, 2, 3">
+                </div>
+
+                {{-- Luggage --}}
+                <div>
+                    <x-input-label for="luggage" value="Luggage" />
+                    <input type="number"
+                        name="luggage"
+                        id="luggage"
+                        min="0"
+                        class="w-full border rounded px-3 py-2"
+                        value="{{ old('luggage', $task->luggage) }}"
+                        placeholder="Number of bags">
+                </div>
+
+            </div>
             {{-- 跑腿专属字段 --}}
             <div id="errand-fields" class="@if($task->category?->slug !== 'errand') hidden @endif">
-                <div class="mt-2">
-                    <x-input-label for="pickup_address" value="Pickup Address" />
-                    <x-text-input id="pickup_address" name="pickup_address" value="{{ old('pickup_address', $task->pickup_address) }}" class="mt-1 block w-full" />
-                    <x-input-error :messages="$errors->get('pickup_address')" />
-                </div>
-
-                <div class="mt-2">
-                    <x-input-label for="dropoff_address" value="Drop-off Address" />
-                    <x-text-input id="dropoff_address" name="dropoff_address" value="{{ old('dropoff_address', $task->dropoff_address) }}" class="mt-1 block w-full" />
-                    <x-input-error :messages="$errors->get('dropoff_address')" />
-                </div>
 
                 <div class="mt-6 space-y-2">
                     <h3 class="font-semibold">Delivery Route Preview</h3>
@@ -152,6 +238,44 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
+        let CURRENT_TYPE = '{{ $task->service_type }}';
+        window.IS_AIRPORT = CURRENT_TYPE === 'airport';
+        window.IS_ERRAND = CURRENT_TYPE === 'errand';
+        toggleFields;
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const serviceType = document.getElementById('service_type');
+
+            const airportFields = document.getElementById('airport-fields');
+            const errandFields = document.getElementById('errand-fields');
+            const mapBox = document.getElementById('map');
+
+            function toggleFields() {
+                const type = serviceType.value;
+
+                // airport
+                if (airportFields) {
+                    airportFields.classList.toggle('hidden', type !== 'airport');
+                }
+
+                // errand
+                if (errandFields) {
+                    errandFields.classList.toggle('hidden', type !== 'errand');
+                }
+
+                // map（只 errand 显示）
+                if (mapBox) {
+                    mapBox.classList.toggle('hidden', type !== 'errand');
+                }
+            }
+
+            serviceType.addEventListener('change', toggleFields);
+            toggleFields(); // 初始化
+         });
+    </script>
+    <script>
     const grid = document.getElementById('photo-grid');
     const photosInput = document.getElementById('photosInput');
 
@@ -216,6 +340,7 @@
         const PRICE_PER_KM = 1.5;
 
         function initMap() {
+            if (window.IS_AIRPORT) return; // 🚫 airport 不初始化 map
             console.log('✅ initMap fired');
 
             const mapEl = document.getElementById('map');
@@ -262,6 +387,7 @@
         }
 
         function drawRoute() {
+            if (window.IS_AIRPORT) return; // 🚫 airport 不计算
             const pickup = document.getElementById('pickup_address')?.value;
             const dropoff = document.getElementById('dropoff_address')?.value;
 
@@ -294,6 +420,7 @@
         }
 
         function updateBudget(distanceKm) {
+            if (window.IS_AIRPORT) return;
             const weight = parseFloat(document.getElementById('weight_kg')?.value || 0);
             const size = document.getElementById('size_level')?.value;
 

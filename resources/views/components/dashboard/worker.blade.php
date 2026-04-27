@@ -119,16 +119,53 @@
                                     $alreadyBid = $bids->pluck('job_id')->contains($task->id);
                                 @endphp
 
-                                <div class="shrink-0 ml-4">
-                                    @if(!$alreadyBid)
-                                        <a href="{{ route('bids.create', $task) }}"
+                               <div class="shrink-0 ml-4">
+
+                                {{-- 🚀 instant任务：直接接单 --}}
+                                @if($task->task_type === 'instant')
+
+                                    @if($task->can_accept && !$task->worker_id)
+
+                                        <a href="{{ route('tasks.accept', $task) }}"
                                         class="text-white bg-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm">
+                                            Accept
+                                        </a>
+
+                                    @else
+
+                                        <button disabled
+                                                class="text-gray-400 bg-gray-200 px-4 py-2 rounded-lg text-sm">
+                                            Not Available
+                                        </button>
+
+                                    @endif
+
+
+                                {{-- 🟡 bidding任务：投标 --}}
+                                @else
+
+                                    @php
+                                        $alreadyBid = $bids->pluck('job_id')->contains($task->id);
+                                    @endphp
+
+                                    @if(!$alreadyBid)
+
+                                        <a href="{{ route('bids.create', $task) }}"
+                                        class="text-white bg-green-600 px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
                                             Submit Bid
                                         </a>
+
                                     @else
-                                        <span class="text-gray-500 px-4 py-2 rounded-lg border text-sm">Already Bid</span>
+
+                                        <span class="text-gray-500 px-4 py-2 rounded-lg border text-sm">
+                                            Already Bid
+                                        </span>
+
                                     @endif
-                                </div>
+
+                                @endif
+
+                            </div>
                             </li>
                         @endforeach
                     </ul>

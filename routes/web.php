@@ -17,6 +17,8 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\StripeWebhookController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -91,6 +93,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/tasks', [TaskJobController::class, 'store'])
         ->name('tasks.store');
+    Route::delete('/tasks/{task}', [TaskJobController::class, 'destroy'])
+    ->name('tasks.destroy');
 });
 
 /**
@@ -183,4 +187,27 @@ Route::middleware(['auth'])
     });
 
 Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show']);
+
+Route::middleware(['auth', 'verified'])->group(function () {
+
+    // 创建接送机订单
+    Route::get('/airport-pickup', [OrderController::class, 'create'])->name('airport.create');
+    Route::post('/airport-pickup', [OrderController::class, 'store'])->name('airport.store');
+
+    // 订单详情
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+    // 支付
+    Route::get('/orders/{order}/pay', [OrderController::class, 'pay'])->name('orders.pay');
+
+    // 支付成功
+    Route::get('/orders/{order}/success', [OrderController::class, 'success'])->name('orders.success');
+});
+
+Route::post('/tasks/{task}/accept-airport', [TaskJobController::class, 'acceptAirport'])
+    ->middleware('auth')
+    ->name('tasks.acceptAirport');
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
+Route::post('/orders/{order}/create-intent', [OrderController::class, 'createIntent'])
+    ->name('orders.intent');
 require __DIR__.'/auth.php';

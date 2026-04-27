@@ -53,64 +53,7 @@ class WorkerController extends Controller
         return view('workers.edit', compact('profile', 'worker', 'categories', 'photos'));
     }
 
-    // public function update(UpdateWorkerProfileRequest $request)
-    // {
-    //     $user = Auth::user();
-    //     // // 如果 profile 不存在则创建
-    //     $profile = $user->profile ?? Profile::create([
-    //         'user_id' => $user->id,
-    //     ]);
-    //     $data = $request->validated();
-
-    //     // ✅ 防止 403（服务器 WAF 拦截）
-    //     if (isset($data['bio'])) {
-    //         $data['bio'] = strip_tags($data['bio']);
-    //         $data['bio'] = preg_replace("/\r\n|\r/", "\n", $data['bio']); // 标准化换行
-    //         $data['bio'] = preg_replace('/\n{3,}/', "\n\n", $data['bio']); // 限制换行
-    //         $data['bio'] = mb_substr($data['bio'], 0, 500);
-    //     }
-
-    //     // skills = categories 文本拼接
-    //     $data['skills'] = isset($data['category_ids'])
-    //         ? Category::whereIn('id', $data['category_ids'])
-    //             ->pluck('name')
-    //             ->implode(', ')
-    //         : '';
-
-    //     // avatar
-    //     if ($request->hasFile('avatar')) {
-    //         $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
-    //     }
-
-    //     // 更新基础 profile 字段
-    //     $profile->update($data);
-
-    //     // 同步多对多分类
-    //     $profile->categories()->sync($request->input('category_ids', []));
-
-    //     // photos 上传
-    //     if ($request->hasFile('photos')) {
-    //         // 找到已有最大 sort
-    //         $maxSort = $profile->photos()->max('sort') ?? 0;
-
-    //         foreach ($request->file('photos') as $index => $photo) {
-
-    //             $mime = $photo->getMimeType();
-    //             $type = str_starts_with($mime, 'video/') ? 'video' : 'image';
-
-    //             $path = $photo->store('profile_photos', 'public');
-
-    //             ProfilePhoto::create([
-    //                 'profile_id' => $profile->id,
-    //                 'path'       => $path,
-    //                 'type'       => $type, // image | video
-    //                 'sort'       => $maxSort + $index + 1,
-    //             ]);
-    //         }
-    //     }
-
-    //     return back()->with('success', 'Profile updated successfully.');
-    // }
+   
     public function update(UpdateWorkerProfileRequest $request)
     {
         $user = Auth::user();

@@ -15,7 +15,7 @@
             <option value="red" @selected($category->color=='red')>Red</option>
             <option value="green" @selected($category->color=='green')>Green</option>
             <option value="yellow" @selected($category->color=='yellow')>Yellow</option>
-             <option value="blue" @selected($category->color=='blue')>Blue</option>
+            <option value="blue" @selected($category->color=='blue')>Blue</option>
             <option value="teal" @selected($category->color=='teal')>Teal</option>
             <option value="purple" @selected($category->color=='purple')>Purple</option>
             <option value="pink" @selected($category->color=='pink')>Pink</option>
