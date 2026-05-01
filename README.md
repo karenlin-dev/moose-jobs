@@ -30,7 +30,7 @@ It allows:
 
 The system follows a modular, API-first architecture.
 
-![Architecture](./architecture.png)
+![Architecture](./architecture-diagram.png)
 
 ### Key Components
 - RESTful API layer (Laravel)
