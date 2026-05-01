@@ -30,7 +30,7 @@ It allows:
 
 The system follows a modular, API-first architecture.
 
-![Architecture](docs/architecture.png)
+![Architecture](./architecture.png)
 
 ### Key Components
 - RESTful API layer (Laravel)
@@ -89,14 +89,6 @@ Handled Stripe webhook events to ensure payment and order consistency.
 - Improve system scalability (queue, caching)
 - Add frontend UI (Vue.js)
 - Optimize performance for large-scale users
-
----
-
-## System Architecture
-
-Below is the system design overview:
-
-![Architecture Diagram](./architecture-diagram.png)
 
 ---
 
